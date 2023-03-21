@@ -13,7 +13,6 @@ require (
 	github.com/go-git/go-git/v5 v5.4.3-0.20210630082519-b4368b2a2ca4
 	github.com/gobwas/glob v0.2.3
 	github.com/google/pprof v0.0.0-20221010195024-131d412537ea
-	github.com/hashicorp/go-version v1.6.0
 	github.com/stretchr/testify v1.8.1
 	github.com/yuin/goldmark v1.5.2
 	golang.org/x/exp v0.0.0-20221114191408-850992195362
@@ -28,6 +27,7 @@ require (
 	github.com/gliderlabs/ssh v0.3.4 // indirect
 	github.com/go-enry/go-oniguruma v1.2.1 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
+	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
