@@ -455,7 +455,7 @@ func (repo *Repository) IsCommitInBranch(commitID, branch string) (r bool, err e
 
 func (repo *Repository) AddLastCommitCache(cacheKey, fullName, sha string) error {
 	if repo.LastCommitCache == nil {
-		commitsCount, err := cache.GetInt64(cacheKey, func() (int64, error) {
+		commitsCount, err := cache.Get(cacheKey, func() (int64, error) {
 			commit, err := repo.GetCommit(sha)
 			if err != nil {
 				return 0, err
