@@ -1,6 +1,10 @@
 package log
 
-import "golang.org/x/exp/slog"
+import (
+	"fmt"
+
+	"golang.org/x/exp/slog"
+)
 
 type sLog struct {
 }
@@ -9,28 +13,28 @@ func (l *sLog) Info(format string, args ...any) {
 	if logger == nil {
 		return
 	}
-	slog.Info(format, args...)
+	slog.Info(format, fmt.Sprintf(format, args...))
 }
 
 func (l *sLog) Debug(format string, args ...any) {
 	if logger == nil {
 		return
 	}
-	slog.Debug(format, args...)
+	slog.Debug(format, fmt.Sprintf(format, args...))
 }
 
 func (l *sLog) Error(format string, args ...any) {
 	if l == nil {
 		return
 	}
-	slog.Log(slog.ErrorLevel, format, args...)
+	slog.Log(slog.ErrorLevel, format, fmt.Sprintf(format, args...))
 }
 
 func (l *sLog) Warn(format string, args ...any) {
 	if l == nil {
 		return
 	}
-	slog.Warn(format, args...)
+	slog.Warn(format, fmt.Sprintf(format, args...))
 }
 
 func (l *sLog) Fatal(format string, args ...any) {

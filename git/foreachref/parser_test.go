@@ -5,6 +5,7 @@
 package foreachref_test
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -12,7 +13,6 @@ import (
 	"testing"
 
 	"github.com/enverbisevac/gitlib/git/foreachref"
-	"github.com/enverbisevac/gitlib/json"
 
 	"github.com/stretchr/testify/require"
 )

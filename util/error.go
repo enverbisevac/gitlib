@@ -18,20 +18,3 @@ var (
 	ErrAlreadyExist     = errors.New("resource already exists")
 	ErrNotExist         = errors.New("resource does not exist")
 )
-
-// SilentWrap provides a simple wrapper for a wrapped error where the wrapped error message plays no part in the error message
-// Especially useful for "untyped" errors created with "errors.New(…)" that can be classified as 'invalid argument', 'permission denied', 'exists already', or 'does not exist'
-type SilentWrap struct {
-	Message string
-	Err     error
-}
-
-// Error returns the message
-func (w SilentWrap) Error() string {
-	return w.Message
-}
-
-// Unwrap returns the underlying error
-func (w SilentWrap) Unwrap() error {
-	return w.Err
-}
