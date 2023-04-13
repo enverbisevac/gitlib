@@ -43,6 +43,7 @@ var (
 		Timeout                   struct {
 			Default int
 		}
+		LargeObjectThreshold int64
 	}{}
 	LFS = struct {
 		StartServer bool
