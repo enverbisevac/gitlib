@@ -49,7 +49,7 @@ func (c *LastCommitCache) Put(ref, entryPath, commitID string) error {
 	if c == nil || c.cache == nil {
 		return nil
 	}
-	log.Debug("LastCommitCache save: [%s:%s:%s]", ref, entryPath, commitID)
+	log.Info("LastCommitCache save: [%s:%s:%s]", ref, entryPath, commitID)
 	return c.cache.Put(getCacheKey(c.repoPath, ref, entryPath), commitID, c.ttl())
 }
 
@@ -64,10 +64,10 @@ func (c *LastCommitCache) Get(ref, entryPath string) (*Commit, error) {
 		return nil, nil
 	}
 
-	log.Debug("LastCommitCache hit level 1: [%s:%s:%s]", ref, entryPath, commitID)
+	log.Info("LastCommitCache hit level 1: [%s:%s:%s]", ref, entryPath, commitID)
 	if c.commitCache != nil {
 		if commit, ok := c.commitCache[commitID]; ok {
-			log.Debug("LastCommitCache hit level 2: [%s:%s:%s]", ref, entryPath, commitID)
+			log.Info("LastCommitCache hit level 2: [%s:%s:%s]", ref, entryPath, commitID)
 			return commit, nil
 		}
 	}

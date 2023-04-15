@@ -25,7 +25,7 @@ type Note struct {
 // GetNote retrieves the git-notes data for a given commit.
 // FIXME: Add LastCommitCache support
 func GetNote(ctx context.Context, repo *Repository, commitID string, note *Note) error {
-	log.Trace("Searching for git note corresponding to the commit %q in the repository %q", commitID, repo.Path)
+	log.Info("Searching for git note corresponding to the commit %q in the repository %q", commitID, repo.Path)
 	notes, err := repo.GetCommit(NotesRef)
 	if err != nil {
 		if IsErrNotExist(err) {
@@ -38,7 +38,7 @@ func GetNote(ctx context.Context, repo *Repository, commitID string, note *Note)
 	remainingCommitID := commitID
 	path := ""
 	currentTree := notes.Tree.gogitTree
-	log.Trace("Found tree with ID %q while searching for git note corresponding to the commit %q", currentTree.Entries[0].Name, commitID)
+	log.Info("Found tree with ID %q while searching for git note corresponding to the commit %q", currentTree.Entries[0].Name, commitID)
 	var file *object.File
 	for len(remainingCommitID) > 2 {
 		file, err = currentTree.File(remainingCommitID)

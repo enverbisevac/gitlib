@@ -110,7 +110,7 @@ func ParseDiffHunkString(diffhunk string) (leftLine, leftHunk, rightLine, righHu
 			righHunk, _ = strconv.Atoi(rightRange[1])
 		}
 	} else {
-		log.Debug("Parse line number failed: %v", diffhunk)
+		log.Info("Parse line number failed: %v", diffhunk)
 		rightLine = leftLine
 		righHunk = leftHunk
 	}

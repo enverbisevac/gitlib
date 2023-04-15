@@ -46,8 +46,10 @@ func TestMain(m *testing.M) {
 }
 
 func TestGitConfig(t *testing.T) {
+	homeDir, err := HomeDir()
+	assert.NoError(t, err)
 	gitConfigContains := func(sub string) bool {
-		if b, err := os.ReadFile(HomeDir() + "/.gitconfig"); err == nil {
+		if b, err := os.ReadFile(homeDir + "/.gitconfig"); err == nil {
 			return strings.Contains(string(b), sub)
 		}
 		return false

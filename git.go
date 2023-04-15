@@ -129,21 +129,20 @@ func checkInit() error {
 		return errors.New("unable to init Git's HomeDir, incorrect initialization of the setting and git modules")
 	}
 	if DefaultContext != nil {
-		log.Warn("git module has been initialized already, duplicate init may work but it's better to fix it")
+		log.Info("git module has been initialized already, duplicate init may work but it's better to fix it")
 	}
 	return nil
 }
 
 // HomeDir is the home dir for git to store the global config file used by Gitea internally
-func HomeDir() string {
+func HomeDir() (string, error) {
 	if setting.Git.HomePath == "" {
 		// strict check, make sure the git module is initialized correctly.
 		// attention: when the git module is called in gitea sub-command (serv/hook), the log module might not obviously show messages to users/developers.
 		// for example: if there is gitea git hook code calling git.NewCommand before git.InitXxx, the integration test won't show the real failure reasons.
-		log.Fatal("Unable to init Git's HomeDir, incorrect initialization of the setting and git modules")
-		return ""
+		return "", errors.New("unable to init Git's HomeDir, incorrect initialization of the setting and git modules")
 	}
-	return setting.Git.HomePath
+	return setting.Git.HomePath, nil
 }
 
 // InitSimple initializes git module with a very simple step, no config changes, no global command arguments.
@@ -174,9 +173,14 @@ func InitFull(ctx context.Context) (err error) {
 		return
 	}
 
+	homeDir, err := HomeDir()
+	if err != nil {
+		return err
+	}
+
 	// when git works with gnupg (commit signing), there should be a stable home for gnupg commands
 	if _, ok := os.LookupEnv("GNUPGHOME"); !ok {
-		_ = os.Setenv("GNUPGHOME", filepath.Join(HomeDir(), ".gnupg"))
+		_ = os.Setenv("GNUPGHOME", filepath.Join(homeDir, ".gnupg"))
 	}
 
 	// Since git wire protocol has been released from git v2.18
@@ -203,8 +207,12 @@ func InitFull(ctx context.Context) (err error) {
 
 // syncGitConfig only modifies gitconfig, won't change global variables (otherwise there will be data-race problem)
 func syncGitConfig() (err error) {
-	if err = os.MkdirAll(HomeDir(), os.ModePerm); err != nil {
-		return fmt.Errorf("unable to prepare git home directory %s, err: %w", HomeDir(), err)
+	homeDir, err := HomeDir()
+	if err != nil {
+		return err
+	}
+	if err = os.MkdirAll(homeDir, os.ModePerm); err != nil {
+		return fmt.Errorf("unable to prepare git home directory %s, err: %w", homeDir, err)
 	}
 
 	// Git requires setting user.name and user.email in order to commit changes - old comment: "if they're not set just add some defaults"

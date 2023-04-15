@@ -40,7 +40,7 @@ func (r *Repository) CommitNodeIndex() (cgobject.CommitNodeIndex, *os.File) {
 	}
 
 	if !os.IsNotExist(err) {
-		log.Warn("Unable to read commit-graph for %s: %v", r.Path, err)
+		log.Info("Unable to read commit-graph for %s: %v", r.Path, err)
 	}
 
 	return cgobject.NewObjectCommitNodeIndex(r.gogitRepo.Storer), nil

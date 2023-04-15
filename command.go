@@ -159,10 +159,14 @@ type RunOpts struct {
 	PipelineFunc      func(context.Context, context.CancelFunc) error
 }
 
-func commonBaseEnvs() []string {
+func commonBaseEnvs() ([]string, error) {
+	homeDir, err := HomeDir()
+	if err != nil {
+		return nil, err
+	}
 	// at the moment, do not set "GIT_CONFIG_NOSYSTEM", users may have put some configs like "receive.certNonceSeed" in it
 	envs := []string{
-		"HOME=" + HomeDir(),        // make Gitea use internal git config only, to prevent conflicts with user's git config
+		"HOME=" + homeDir,          // make Gitea use internal git config only, to prevent conflicts with user's git config
 		"GIT_NO_REPLACE_OBJECTS=1", // ignore replace references (https://git-scm.com/docs/git-replace)
 	}
 
@@ -175,19 +179,23 @@ func commonBaseEnvs() []string {
 			envs = append(envs, key+"="+val)
 		}
 	}
-	return envs
+	return envs, nil
 }
 
 // CommonGitCmdEnvs returns the common environment variables for a "git" command.
-func CommonGitCmdEnvs() []string {
-	return append(commonBaseEnvs(), []string{
+func CommonGitCmdEnvs() ([]string, error) {
+	slice, err := commonBaseEnvs()
+	if err != nil {
+		return nil, err
+	}
+	return append(slice, []string{
 		"LC_ALL=" + DefaultLocale,
 		"GIT_TERMINAL_PROMPT=0", // avoid prompting for credentials interactively, supported since git v2.3
-	}...)
+	}...), nil
 }
 
 // CommonCmdServEnvs is like CommonGitCmdEnvs, but it only returns minimal required environment variables for the "gitea serv" command
-func CommonCmdServEnvs() []string {
+func CommonCmdServEnvs() ([]string, error) {
 	return commonBaseEnvs()
 }
 
@@ -207,9 +215,9 @@ func (c *Command) Run(opts *RunOpts) error {
 	}
 
 	if len(opts.Dir) == 0 {
-		log.Debug("%s", c)
+		log.Info("%s", c)
 	} else {
-		log.Debug("%s: %v", opts.Dir, c)
+		log.Info("%s: %v", opts.Dir, c)
 	}
 
 	desc := c.desc
@@ -250,7 +258,11 @@ func (c *Command) Run(opts *RunOpts) error {
 	}
 
 	process.SetSysProcAttribute(cmd)
-	cmd.Env = append(cmd.Env, CommonGitCmdEnvs()...)
+	args, err := CommonGitCmdEnvs()
+	if err != nil {
+		return err
+	}
+	cmd.Env = append(cmd.Env, args...)
 	cmd.Dir = opts.Dir
 	cmd.Stdout = opts.Stdout
 	cmd.Stderr = opts.Stderr
