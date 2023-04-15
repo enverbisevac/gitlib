@@ -19,7 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/enverbisevac/gitlib/proxy"
 	"github.com/enverbisevac/gitlib/util"
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -154,8 +153,8 @@ func CloneWithArgs(ctx context.Context, args []CmdArg, from, to string, opts Clo
 	envs := os.Environ()
 	u, err := url.Parse(from)
 	if err == nil && (strings.EqualFold(u.Scheme, "http") || strings.EqualFold(u.Scheme, "https")) {
-		if proxy.Match(u.Host) {
-			envs = append(envs, fmt.Sprintf("https_proxy=%s", proxy.GetProxyURL()))
+		if Match(u.Host) {
+			envs = append(envs, fmt.Sprintf("https_proxy=%s", GetProxyURL()))
 		}
 	}
 

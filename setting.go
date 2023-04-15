@@ -1,4 +1,4 @@
-package setting
+package git
 
 import (
 	"net/url"
@@ -9,13 +9,11 @@ import (
 	"github.com/enverbisevac/gitlib/log"
 )
 
-type Cache struct {
-	TTL time.Duration
-}
-
 var (
 	CacheService = struct {
-		Cache
+		Cache struct {
+			TTL time.Duration
+		}
 		LastCommit struct {
 			Enabled      bool
 			TTL          time.Duration
@@ -72,11 +70,6 @@ func newProxyService() {
 		}
 	}
 	Proxy.ProxyHosts = strings.Split(os.Getenv("PROXY_HOSTS"), ",")
-}
-
-// TTLSeconds returns the TTLSeconds or unix timestamp for memcache
-func (c Cache) TTLSeconds() int64 {
-	return int64(c.TTL.Seconds())
 }
 
 // LastCommitCacheTTLSeconds returns the TTLSeconds or unix timestamp for memcache

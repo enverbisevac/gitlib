@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style
 // license that can be found in the LICENSE file.
 
-package proxy
+package git
 
 import (
 	"net/http"
@@ -11,8 +11,6 @@ import (
 	"sync"
 
 	"github.com/enverbisevac/gitlib/log"
-	"github.com/enverbisevac/gitlib/setting"
-
 	"github.com/gobwas/glob"
 )
 
@@ -23,27 +21,27 @@ var (
 
 // GetProxyURL returns proxy url
 func GetProxyURL() string {
-	if !setting.Proxy.Enabled {
+	if !Proxy.Enabled {
 		return ""
 	}
 
-	if setting.Proxy.ProxyURL == "" {
+	if Proxy.ProxyURL == "" {
 		if os.Getenv("http_proxy") != "" {
 			return os.Getenv("http_proxy")
 		}
 		return os.Getenv("https_proxy")
 	}
-	return setting.Proxy.ProxyURL
+	return Proxy.ProxyURL
 }
 
 // Match return true if url needs to be proxied
 func Match(u string) bool {
-	if !setting.Proxy.Enabled {
+	if !Proxy.Enabled {
 		return false
 	}
 
 	// enforce do once
-	Proxy()
+	GetProxy()
 
 	for _, v := range hostMatchers {
 		if v.Match(u) {
@@ -53,19 +51,19 @@ func Match(u string) bool {
 	return false
 }
 
-// Proxy returns the system proxy
-func Proxy() func(req *http.Request) (*url.URL, error) {
-	if !setting.Proxy.Enabled {
+// GetProxy returns the system proxy
+func GetProxy() func(req *http.Request) (*url.URL, error) {
+	if !Proxy.Enabled {
 		return func(req *http.Request) (*url.URL, error) {
 			return nil, nil
 		}
 	}
-	if setting.Proxy.ProxyURL == "" {
+	if Proxy.ProxyURL == "" {
 		return http.ProxyFromEnvironment
 	}
 
 	once.Do(func() {
-		for _, h := range setting.Proxy.ProxyHosts {
+		for _, h := range Proxy.ProxyHosts {
 			if g, err := glob.Compile(h); err == nil {
 				hostMatchers = append(hostMatchers, g)
 			} else {
@@ -77,7 +75,7 @@ func Proxy() func(req *http.Request) (*url.URL, error) {
 	return func(req *http.Request) (*url.URL, error) {
 		for _, v := range hostMatchers {
 			if v.Match(req.URL.Host) {
-				return http.ProxyURL(setting.Proxy.ProxyURLFixed)(req)
+				return http.ProxyURL(Proxy.ProxyURLFixed)(req)
 			}
 		}
 		return http.ProxyFromEnvironment(req)

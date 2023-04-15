@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 
 	"github.com/enverbisevac/gitlib/log"
-	"github.com/enverbisevac/gitlib/setting"
 	"github.com/go-git/go-billy/v5/osfs"
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/cache"
@@ -93,7 +92,7 @@ func OpenRepository(ctx context.Context, repoPath string) (*Repository, error) {
 			return nil, err
 		}
 	}
-	storage := filesystem.NewStorageWithOptions(fs, cache.NewObjectLRUDefault(), filesystem.Options{KeepDescriptors: true, LargeObjectThreshold: setting.Git.LargeObjectThreshold})
+	storage := filesystem.NewStorageWithOptions(fs, cache.NewObjectLRUDefault(), filesystem.Options{KeepDescriptors: true, LargeObjectThreshold: Git.LargeObjectThreshold})
 	gogitRepo, err := gogit.Open(storage, fs)
 	if err != nil {
 		return nil, err

@@ -8,9 +8,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 
-	"github.com/enverbisevac/gitlib/cache"
 	"github.com/enverbisevac/gitlib/log"
-	"github.com/enverbisevac/gitlib/setting"
 )
 
 func getCacheKey(repoPath, commitID, entryPath string) string {
@@ -24,22 +22,22 @@ type LastCommitCache struct {
 	ttl         func() int64
 	repo        *Repository
 	commitCache map[string]*Commit
-	cache       cache.Cache
+	cache       Cache
 }
 
 // NewLastCommitCache creates a new last commit cache for repo
-func NewLastCommitCache(count int64, repoPath string, gitRepo *Repository, cache cache.Cache) *LastCommitCache {
+func NewLastCommitCache(count int64, repoPath string, gitRepo *Repository, cache Cache) *LastCommitCache {
 	if cache == nil {
 		return nil
 	}
-	if !setting.CacheService.LastCommit.Enabled || count < setting.CacheService.LastCommit.CommitsCount {
+	if !CacheService.LastCommit.Enabled || count < CacheService.LastCommit.CommitsCount {
 		return nil
 	}
 
 	return &LastCommitCache{
 		repoPath: repoPath,
 		repo:     gitRepo,
-		ttl:      setting.LastCommitCacheTTLSeconds,
+		ttl:      LastCommitCacheTTLSeconds,
 		cache:    cache,
 	}
 }

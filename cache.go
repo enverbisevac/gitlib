@@ -1,9 +1,7 @@
-package cache
+package git
 
 import (
 	"fmt"
-
-	"github.com/enverbisevac/gitlib/setting"
 )
 
 // Cache represents a caching interface
@@ -17,15 +15,15 @@ type Cache interface {
 	Delete(key string) error
 }
 
-var cache Cache
+var lcache Cache
 
 func Initialize(c Cache) {
-	cache = c
+	lcache = c
 }
 
 // GetCache returns the currently configured cache
 func GetCache() Cache {
-	return cache
+	return lcache
 }
 
 // Get returns the key value from cache with callback when no key exists in cache
@@ -34,21 +32,21 @@ func Get[T any](key string, getFunc func() (T, error)) (T, error) {
 		empty T
 	)
 
-	if cache == nil || setting.CacheService.TTL == 0 {
+	if lcache == nil || CacheService.Cache.TTL == 0 {
 		return getFunc()
 	}
 
-	if !cache.IsExist(key) {
+	if !lcache.IsExist(key) {
 		value, err := getFunc()
 		if err != nil {
 			return value, err
 		}
-		err = cache.Put(key, value, setting.CacheService.TTLSeconds())
+		err = lcache.Put(key, value, CacheService.Cache.TTL.Milliseconds())
 		if err != nil {
 			return empty, err
 		}
 	}
-	value := cache.Get(key)
+	value := lcache.Get(key)
 	if v, ok := value.(T); ok {
 		return v, nil
 	}
@@ -57,8 +55,8 @@ func Get[T any](key string, getFunc func() (T, error)) (T, error) {
 
 // Remove key from cache
 func Remove(key string) {
-	if cache == nil {
+	if lcache == nil {
 		return
 	}
-	_ = cache.Delete(key)
+	_ = lcache.Delete(key)
 }

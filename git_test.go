@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/enverbisevac/gitlib/setting"
 	"github.com/enverbisevac/gitlib/util"
 
 	"github.com/stretchr/testify/assert"
@@ -25,7 +24,7 @@ func testRun(m *testing.M) error {
 	defer func() {
 		_ = util.RemoveAll(gitHomePath)
 	}()
-	setting.Git.HomePath = gitHomePath
+	Git.HomePath = gitHomePath
 
 	if err = InitFull(context.Background()); err != nil {
 		return fmt.Errorf("failed to call Init: %w", err)

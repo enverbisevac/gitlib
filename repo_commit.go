@@ -13,8 +13,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/enverbisevac/gitlib/cache"
-	"github.com/enverbisevac/gitlib/setting"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
@@ -206,7 +204,7 @@ func (repo *Repository) FileCommitsCount(revision, file string) (int64, error) {
 
 // CommitsByFileAndRange return the commits according revision file and the page
 func (repo *Repository) CommitsByFileAndRange(revision, file string, page int) ([]*Commit, error) {
-	skip := (page - 1) * setting.Git.CommitsRangeSize
+	skip := (page - 1) * Git.CommitsRangeSize
 
 	stdoutReader, stdoutWriter := io.Pipe()
 	defer func() {
@@ -216,7 +214,7 @@ func (repo *Repository) CommitsByFileAndRange(revision, file string, page int) (
 	go func() {
 		stderr := strings.Builder{}
 		gitCmd := NewCommand(repo.Ctx, "rev-list").
-			AddArguments(CmdArg("--max-count=" + strconv.Itoa(setting.Git.CommitsRangeSize*page))).
+			AddArguments(CmdArg("--max-count=" + strconv.Itoa(Git.CommitsRangeSize*page))).
 			AddArguments(CmdArg("--skip=" + strconv.Itoa(skip)))
 		gitCmd.AddDynamicArguments(revision)
 		gitCmd.AddDashesAndList(file)
@@ -457,7 +455,7 @@ func (repo *Repository) IsCommitInBranch(commitID, branch string) (r bool, err e
 
 func (repo *Repository) AddLastCommitCache(cacheKey, fullName, sha string) error {
 	if repo.LastCommitCache == nil {
-		commitsCount, err := cache.Get(cacheKey, func() (int64, error) {
+		commitsCount, err := Get(cacheKey, func() (int64, error) {
 			commit, err := repo.GetCommit(sha)
 			if err != nil {
 				return 0, err
@@ -467,7 +465,7 @@ func (repo *Repository) AddLastCommitCache(cacheKey, fullName, sha string) error
 		if err != nil {
 			return err
 		}
-		repo.LastCommitCache = NewLastCommitCache(commitsCount, fullName, repo, cache.GetCache())
+		repo.LastCommitCache = NewLastCommitCache(commitsCount, fullName, repo, GetCache())
 	}
 	return nil
 }

@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/enverbisevac/gitlib/log"
-	"github.com/enverbisevac/gitlib/setting"
 	"github.com/hashicorp/go-version"
 )
 
@@ -116,7 +115,7 @@ func VersionInfo() string {
 	format := "%s"
 	args := []interface{}{gitVersion.Original()}
 	// Since git wire protocol has been released from git v2.18
-	if setting.Git.EnableAutoGitWireProtocol && CheckGitVersionAtLeast("2.18") == nil {
+	if Git.EnableAutoGitWireProtocol && CheckGitVersionAtLeast("2.18") == nil {
 		format += ", Wire Protocol %s Enabled"
 		args = append(args, "Version 2") // for focus color
 	}
@@ -125,7 +124,7 @@ func VersionInfo() string {
 }
 
 func checkInit() error {
-	if setting.Git.HomePath == "" {
+	if Git.HomePath == "" {
 		return errors.New("unable to init Git's HomeDir, incorrect initialization of the setting and git modules")
 	}
 	if DefaultContext != nil {
@@ -136,13 +135,13 @@ func checkInit() error {
 
 // HomeDir is the home dir for git to store the global config file used by Gitea internally
 func HomeDir() (string, error) {
-	if setting.Git.HomePath == "" {
+	if Git.HomePath == "" {
 		// strict check, make sure the git module is initialized correctly.
 		// attention: when the git module is called in gitea sub-command (serv/hook), the log module might not obviously show messages to users/developers.
 		// for example: if there is gitea git hook code calling git.NewCommand before git.InitXxx, the integration test won't show the real failure reasons.
 		return "", errors.New("unable to init Git's HomeDir, incorrect initialization of the setting and git modules")
 	}
-	return setting.Git.HomePath, nil
+	return Git.HomePath, nil
 }
 
 // InitSimple initializes git module with a very simple step, no config changes, no global command arguments.
@@ -155,11 +154,11 @@ func InitSimple(ctx context.Context) error {
 	DefaultContext = ctx
 	globalCommandArgs = nil
 
-	if setting.Git.Timeout.Default > 0 {
-		defaultCommandExecutionTimeout = time.Duration(setting.Git.Timeout.Default) * time.Second
+	if Git.Timeout.Default > 0 {
+		defaultCommandExecutionTimeout = time.Duration(Git.Timeout.Default) * time.Second
 	}
 
-	return SetExecutablePath(setting.Git.Path)
+	return SetExecutablePath(Git.Path)
 }
 
 // InitFull initializes git module with version check and change global variables, sync gitconfig.
@@ -184,7 +183,7 @@ func InitFull(ctx context.Context) (err error) {
 	}
 
 	// Since git wire protocol has been released from git v2.18
-	if setting.Git.EnableAutoGitWireProtocol && CheckGitVersionAtLeast("2.18") == nil {
+	if Git.EnableAutoGitWireProtocol && CheckGitVersionAtLeast("2.18") == nil {
 		globalCommandArgs = append(globalCommandArgs, "-c", "protocol.version=2")
 	}
 
@@ -195,7 +194,7 @@ func InitFull(ctx context.Context) (err error) {
 
 	SupportProcReceive = CheckGitVersionAtLeast("2.29") == nil
 
-	if setting.LFS.StartServer {
+	if LFS.StartServer {
 		if CheckGitVersionAtLeast("2.1.2") != nil {
 			return errors.New("LFS server support requires Git >= 2.1.2")
 		}
@@ -278,7 +277,7 @@ func syncGitConfig() (err error) {
 		if err := configSet("core.longpaths", "true"); err != nil {
 			return err
 		}
-		if setting.Git.DisableCoreProtectNTFS {
+		if Git.DisableCoreProtectNTFS {
 			err = configSet("core.protectNTFS", "false")
 		} else {
 			err = configUnsetAll("core.protectNTFS", "false")
@@ -289,7 +288,7 @@ func syncGitConfig() (err error) {
 	}
 
 	// By default partial clones are disabled, enable them from git v2.22
-	if !setting.Git.DisablePartialClone && CheckGitVersionAtLeast("2.22") == nil {
+	if !Git.DisablePartialClone && CheckGitVersionAtLeast("2.22") == nil {
 		if err = configSet("uploadpack.allowfilter", "true"); err != nil {
 			return err
 		}
