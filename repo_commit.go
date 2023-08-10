@@ -472,7 +472,7 @@ func (repo *Repository) AddLastCommitCache(cacheKey, fullName, sha string) error
 
 // GetRefCommitID returns the last commit ID string of given reference (branch or tag).
 func (repo *Repository) GetRefCommitID(name string) (string, error) {
-	ref, err := repo.gogitRepo.Reference(plumbing.ReferenceName(name), true)
+	ref, err := repo.Reference(plumbing.ReferenceName(name), true)
 	if err != nil {
 		if err == plumbing.ErrReferenceNotFound {
 			return "", ErrNotExist{
@@ -487,12 +487,12 @@ func (repo *Repository) GetRefCommitID(name string) (string, error) {
 
 // SetReference sets the commit ID string of given reference (e.g. branch or tag).
 func (repo *Repository) SetReference(name, commitID string) error {
-	return repo.gogitRepo.Storer.SetReference(plumbing.NewReferenceFromStrings(name, commitID))
+	return repo.Storer.SetReference(plumbing.NewReferenceFromStrings(name, commitID))
 }
 
 // RemoveReference removes the given reference (e.g. branch or tag).
 func (repo *Repository) RemoveReference(name string) error {
-	return repo.gogitRepo.Storer.RemoveReference(plumbing.ReferenceName(name))
+	return repo.Storer.RemoveReference(plumbing.ReferenceName(name))
 }
 
 // ConvertToSHA1 returns a Hash object from a potential ID string
@@ -519,7 +519,7 @@ func (repo *Repository) ConvertToSHA1(commitID string) (SHA1, error) {
 // IsCommitExist returns true if given commit exists in current repository.
 func (repo *Repository) IsCommitExist(name string) bool {
 	hash := plumbing.NewHash(name)
-	_, err := repo.gogitRepo.CommitObject(hash)
+	_, err := repo.CommitObject(hash)
 	return err == nil
 }
 
@@ -558,16 +558,16 @@ func convertPGPSignatureForTag(t *object.Tag) *CommitGPGSignature {
 func (repo *Repository) getCommit(id SHA1) (*Commit, error) {
 	var tagObject *object.Tag
 
-	gogitCommit, err := repo.gogitRepo.CommitObject(id)
+	gogitCommit, err := repo.CommitObject(id)
 	if err == plumbing.ErrObjectNotFound {
-		tagObject, err = repo.gogitRepo.TagObject(id)
+		tagObject, err = repo.TagObject(id)
 		if err == plumbing.ErrObjectNotFound {
 			return nil, ErrNotExist{
 				ID: id.String(),
 			}
 		}
 		if err == nil {
-			gogitCommit, err = repo.gogitRepo.CommitObject(tagObject.Target)
+			gogitCommit, err = repo.CommitObject(tagObject.Target)
 		}
 		// if we get a plumbing.ErrObjectNotFound here then the repository is broken and it should be 500
 	}

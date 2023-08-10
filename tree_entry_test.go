@@ -14,14 +14,14 @@ import (
 
 func getTestEntries() Entries {
 	return Entries{
-		&TreeEntry{gogitTreeEntry: &object.TreeEntry{Name: "v1.0", Mode: filemode.Dir}},
-		&TreeEntry{gogitTreeEntry: &object.TreeEntry{Name: "v2.0", Mode: filemode.Dir}},
-		&TreeEntry{gogitTreeEntry: &object.TreeEntry{Name: "v2.1", Mode: filemode.Dir}},
-		&TreeEntry{gogitTreeEntry: &object.TreeEntry{Name: "v2.12", Mode: filemode.Dir}},
-		&TreeEntry{gogitTreeEntry: &object.TreeEntry{Name: "v2.2", Mode: filemode.Dir}},
-		&TreeEntry{gogitTreeEntry: &object.TreeEntry{Name: "v12.0", Mode: filemode.Dir}},
-		&TreeEntry{gogitTreeEntry: &object.TreeEntry{Name: "abc", Mode: filemode.Regular}},
-		&TreeEntry{gogitTreeEntry: &object.TreeEntry{Name: "bcd", Mode: filemode.Regular}},
+		&TreeEntry{entry: &object.TreeEntry{Name: "v1.0", Mode: filemode.Dir}},
+		&TreeEntry{entry: &object.TreeEntry{Name: "v2.0", Mode: filemode.Dir}},
+		&TreeEntry{entry: &object.TreeEntry{Name: "v2.1", Mode: filemode.Dir}},
+		&TreeEntry{entry: &object.TreeEntry{Name: "v2.12", Mode: filemode.Dir}},
+		&TreeEntry{entry: &object.TreeEntry{Name: "v2.2", Mode: filemode.Dir}},
+		&TreeEntry{entry: &object.TreeEntry{Name: "v12.0", Mode: filemode.Dir}},
+		&TreeEntry{entry: &object.TreeEntry{Name: "abc", Mode: filemode.Regular}},
+		&TreeEntry{entry: &object.TreeEntry{Name: "bcd", Mode: filemode.Regular}},
 	}
 }
 

@@ -35,7 +35,7 @@ func (r *Repository) CommitNodeIndex() (cgobject.CommitNodeIndex, *os.File) {
 		var index commitgraph.Index
 		index, err = commitgraph.OpenFileIndex(file)
 		if err == nil {
-			return cgobject.NewGraphCommitNodeIndex(index, r.gogitRepo.Storer), file
+			return cgobject.NewGraphCommitNodeIndex(index, r.Storer), file
 		}
 	}
 
@@ -43,5 +43,5 @@ func (r *Repository) CommitNodeIndex() (cgobject.CommitNodeIndex, *os.File) {
 		log.Info("Unable to read commit-graph for %s: %v", r.Path, err)
 	}
 
-	return cgobject.NewObjectCommitNodeIndex(r.gogitRepo.Storer), nil
+	return cgobject.NewObjectCommitNodeIndex(r.Storer), nil
 }

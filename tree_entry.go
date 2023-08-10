@@ -19,8 +19,8 @@ import (
 type TreeEntry struct {
 	ID SHA1
 
-	gogitTreeEntry *object.TreeEntry
-	ptree          *Tree
+	entry *object.TreeEntry
+	ptree *Tree
 
 	size     int64
 	sized    bool
@@ -32,12 +32,12 @@ func (te *TreeEntry) Name() string {
 	if te.fullName != "" {
 		return te.fullName
 	}
-	return te.gogitTreeEntry.Name
+	return te.entry.Name
 }
 
 // Mode returns the mode of the entry
 func (te *TreeEntry) Mode() EntryMode {
-	return EntryMode(te.gogitTreeEntry.Mode)
+	return EntryMode(te.entry.Mode)
 }
 
 // Size returns the size of the entry
@@ -48,7 +48,7 @@ func (te *TreeEntry) Size() int64 {
 		return te.size
 	}
 
-	file, err := te.ptree.gogitTree.TreeEntryFile(te.gogitTreeEntry)
+	file, err := te.ptree.gogitTree.TreeEntryFile(te.entry)
 	if err != nil {
 		return 0
 	}
@@ -60,40 +60,40 @@ func (te *TreeEntry) Size() int64 {
 
 // IsSubModule if the entry is a sub module
 func (te *TreeEntry) IsSubModule() bool {
-	return te.gogitTreeEntry.Mode == filemode.Submodule
+	return te.entry.Mode == filemode.Submodule
 }
 
 // IsDir if the entry is a sub dir
 func (te *TreeEntry) IsDir() bool {
-	return te.gogitTreeEntry.Mode == filemode.Dir
+	return te.entry.Mode == filemode.Dir
 }
 
 // IsLink if the entry is a symlink
 func (te *TreeEntry) IsLink() bool {
-	return te.gogitTreeEntry.Mode == filemode.Symlink
+	return te.entry.Mode == filemode.Symlink
 }
 
 // IsRegular if the entry is a regular file
 func (te *TreeEntry) IsRegular() bool {
-	return te.gogitTreeEntry.Mode == filemode.Regular
+	return te.entry.Mode == filemode.Regular
 }
 
 // IsExecutable if the entry is an executable file (not necessarily binary)
 func (te *TreeEntry) IsExecutable() bool {
-	return te.gogitTreeEntry.Mode == filemode.Executable
+	return te.entry.Mode == filemode.Executable
 }
 
 // Blob returns the blob object the entry
 func (te *TreeEntry) Blob() *Blob {
-	encodedObj, err := te.ptree.repo.gogitRepo.Storer.EncodedObject(plumbing.AnyObject, te.gogitTreeEntry.Hash)
+	encodedObj, err := te.ptree.repo.Storer.EncodedObject(plumbing.AnyObject, te.entry.Hash)
 	if err != nil {
 		return nil
 	}
 
 	return &Blob{
-		ID:              te.gogitTreeEntry.Hash,
-		gogitEncodedObj: encodedObj,
-		name:            te.Name(),
+		ID:   te.entry.Hash,
+		obj:  encodedObj,
+		name: te.Name(),
 	}
 }
 

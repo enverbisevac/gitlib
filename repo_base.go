@@ -58,13 +58,13 @@ func RepositoryFromContextOrOpen(ctx context.Context, path string) (*Repository,
 
 // Repository represents a Git repository.
 type Repository struct {
+	*gogit.Repository
 	Path string
 
 	tagCache *ObjectCache
 
-	gogitRepo    *gogit.Repository
-	gogitStorage *filesystem.Storage
-	gpgSettings  *GPGSettings
+	storage     *filesystem.Storage
+	gpgSettings *GPGSettings
 
 	Ctx             context.Context
 	LastCommitCache *LastCommitCache
@@ -93,34 +93,29 @@ func OpenRepository(ctx context.Context, repoPath string) (*Repository, error) {
 		}
 	}
 	storage := filesystem.NewStorageWithOptions(fs, cache.NewObjectLRUDefault(), filesystem.Options{KeepDescriptors: true, LargeObjectThreshold: Git.LargeObjectThreshold})
-	gogitRepo, err := gogit.Open(storage, fs)
+	repo, err := gogit.Open(storage, fs)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Repository{
-		Path:         repoPath,
-		gogitRepo:    gogitRepo,
-		gogitStorage: storage,
-		tagCache:     newObjectCache(),
-		Ctx:          ctx,
+		Path:       repoPath,
+		Repository: repo,
+		storage:    storage,
+		tagCache:   newObjectCache(),
+		Ctx:        ctx,
 	}, nil
 }
 
 // Close this repository, in particular close the underlying gogitStorage if this is not nil
 func (repo *Repository) Close() (err error) {
-	if repo == nil || repo.gogitStorage == nil {
+	if repo == nil || repo.storage == nil {
 		return
 	}
-	if err := repo.gogitStorage.Close(); err != nil {
+	if err := repo.storage.Close(); err != nil {
 		log.Error("Error closing storage: %v", err)
 	}
 	repo.LastCommitCache = nil
 	repo.tagCache = nil
 	return
-}
-
-// GoGitRepo gets the go-git repo representation
-func (repo *Repository) GoGitRepo() *gogit.Repository {
-	return repo.gogitRepo
 }

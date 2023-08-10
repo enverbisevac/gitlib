@@ -19,19 +19,19 @@ import (
 type Blob struct {
 	ID SHA1
 
-	gogitEncodedObj plumbing.EncodedObject
-	name            string
+	obj  plumbing.EncodedObject
+	name string
 }
 
 // DataAsync gets a ReadCloser for the contents of a blob without reading it all.
 // Calling the Close function on the result will discard all unread output.
 func (b *Blob) DataAsync() (io.ReadCloser, error) {
-	return b.gogitEncodedObj.Reader()
+	return b.obj.Reader()
 }
 
 // Size returns the uncompressed size of the blob
 func (b *Blob) Size() int64 {
-	return b.gogitEncodedObj.Size()
+	return b.obj.Size()
 }
 
 // Name returns name of the tree entry this blob object was created from (or empty string)

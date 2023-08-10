@@ -26,7 +26,7 @@ func TestParseTreeEntries(t *testing.T) {
 			Expected: []*TreeEntry{
 				{
 					ID: MustIDFromString("61ab7345a1a3bbc590068ccae37b8515cfc5843c"),
-					gogitTreeEntry: &object.TreeEntry{
+					entry: &object.TreeEntry{
 						Hash: MustIDFromString("61ab7345a1a3bbc590068ccae37b8515cfc5843c"),
 						Name: "example/file2.txt",
 						Mode: filemode.Regular,
@@ -42,7 +42,7 @@ func TestParseTreeEntries(t *testing.T) {
 			Expected: []*TreeEntry{
 				{
 					ID: MustIDFromString("61ab7345a1a3bbc590068ccae37b8515cfc5843c"),
-					gogitTreeEntry: &object.TreeEntry{
+					entry: &object.TreeEntry{
 						Hash: MustIDFromString("61ab7345a1a3bbc590068ccae37b8515cfc5843c"),
 						Name: "example/\n.txt",
 						Mode: filemode.Symlink,
@@ -53,7 +53,7 @@ func TestParseTreeEntries(t *testing.T) {
 				{
 					ID:    MustIDFromString("1d01fb729fb0db5881daaa6030f9f2d3cd3d5ae8"),
 					sized: true,
-					gogitTreeEntry: &object.TreeEntry{
+					entry: &object.TreeEntry{
 						Hash: MustIDFromString("1d01fb729fb0db5881daaa6030f9f2d3cd3d5ae8"),
 						Name: "example",
 						Mode: filemode.Dir,

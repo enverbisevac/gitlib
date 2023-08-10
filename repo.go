@@ -73,7 +73,7 @@ func InitRepository(ctx context.Context, repoPath string, bare bool) error {
 
 // IsEmpty Check if repository is empty.
 func (repo *Repository) IsEmpty() (bool, error) {
-	_, err := repo.gogitRepo.Head()
+	_, err := repo.Head()
 	if err != nil {
 		if errors.Is(err, plumbing.ErrReferenceNotFound) {
 			return true, nil

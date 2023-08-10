@@ -66,7 +66,7 @@ func (tes Entries) GetCommitsInfo(ctx context.Context, commit *Commit, treePath 
 		return nil, nil, err
 	}
 
-	commit.repo.gogitStorage.Close()
+	commit.repo.storage.Close()
 
 	commitsInfo := make([]CommitInfo, len(tes))
 	for i, entry := range tes {

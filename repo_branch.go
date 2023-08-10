@@ -195,7 +195,7 @@ func (repo *Repository) IsObjectExist(name string) bool {
 		return false
 	}
 
-	_, err := repo.gogitRepo.ResolveRevision(plumbing.Revision(name))
+	_, err := repo.ResolveRevision(plumbing.Revision(name))
 
 	return err == nil
 }
@@ -206,7 +206,7 @@ func (repo *Repository) IsReferenceExist(name string) bool {
 		return false
 	}
 
-	reference, err := repo.gogitRepo.Reference(plumbing.ReferenceName(name), true)
+	reference, err := repo.Reference(plumbing.ReferenceName(name), true)
 	if err != nil {
 		return false
 	}
@@ -218,7 +218,7 @@ func (repo *Repository) IsBranchExist(name string) bool {
 	if name == "" {
 		return false
 	}
-	reference, err := repo.gogitRepo.Reference(plumbing.ReferenceName(BranchPrefix+name), true)
+	reference, err := repo.Reference(plumbing.ReferenceName(BranchPrefix+name), true)
 	if err != nil {
 		return false
 	}
@@ -230,7 +230,7 @@ func (repo *Repository) IsBranchExist(name string) bool {
 func (repo *Repository) GetBranchNames(skip, limit int) ([]string, int, error) {
 	var branchNames []string
 
-	branches, err := repo.gogitRepo.Branches()
+	branches, err := repo.Branches()
 	if err != nil {
 		return nil, 0, err
 	}
@@ -269,7 +269,7 @@ func WalkReferences(ctx context.Context, repoPath string, walkfn func(sha1, refn
 	}
 
 	i := 0
-	iter, err := repo.gogitRepo.References()
+	iter, err := repo.References()
 	if err != nil {
 		return i, err
 	}
@@ -290,11 +290,11 @@ func (repo *Repository) WalkReferences(arg ObjectType, skip, limit int, walkfn f
 	var err error
 	switch arg {
 	case ObjectTag:
-		iter, err = repo.gogitRepo.Tags()
+		iter, err = repo.Tags()
 	case ObjectBranch:
-		iter, err = repo.gogitRepo.Branches()
+		iter, err = repo.Branches()
 	default:
-		iter, err = repo.gogitRepo.References()
+		iter, err = repo.References()
 	}
 	if err != nil {
 		return i, err
@@ -322,7 +322,7 @@ func (repo *Repository) WalkReferences(arg ObjectType, skip, limit int, walkfn f
 // GetRefsBySha returns all references filtered with prefix that belong to a sha commit hash
 func (repo *Repository) GetRefsBySha(sha, prefix string) ([]string, error) {
 	var revList []string
-	iter, err := repo.gogitRepo.References()
+	iter, err := repo.References()
 	if err != nil {
 		return nil, err
 	}
