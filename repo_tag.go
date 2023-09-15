@@ -6,7 +6,6 @@
 package git
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -14,26 +13,22 @@ import (
 	"github.com/enverbisevac/gitlib/foreachref"
 	"github.com/enverbisevac/gitlib/log"
 	"github.com/enverbisevac/gitlib/util"
+	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
 // TagPrefix tags prefix path on the repository
 const TagPrefix = "refs/tags/"
 
-// IsTagExist returns true if given tag exists in the repository.
-func IsTagExist(ctx context.Context, repoPath, name string) bool {
-	return IsReferenceExist(ctx, repoPath, TagPrefix+name)
-}
-
 // CreateTag create one tag in the repository
 func (repo *Repository) CreateTag(name, revision string) error {
-	_, _, err := NewCommand(repo.Ctx, "tag").AddDashesAndList(name, revision).RunStdString(&RunOpts{Dir: repo.Path})
+	_, err := repo.Repository.CreateTag(name, plumbing.NewHash(revision), nil)
 	return err
 }
 
 // CreateAnnotatedTag create one annotated tag in the repository
 func (repo *Repository) CreateAnnotatedTag(name, message, revision string) error {
-	_, _, err := NewCommand(repo.Ctx, "tag", "-a", "-m").AddDynamicArguments(message).AddDashesAndList(name, revision).RunStdString(&RunOpts{Dir: repo.Path})
+	_, err := repo.Repository.CreateTag(name, plumbing.NewHash(revision), &git.CreateTagOptions{Message: message})
 	return err
 }
 
@@ -66,18 +61,11 @@ func (repo *Repository) GetTagNameBySHA(sha string) (string, error) {
 
 // GetTagID returns the object ID for a tag (annotated tags have both an object SHA AND a commit SHA)
 func (repo *Repository) GetTagID(name string) (string, error) {
-	stdout, _, err := NewCommand(repo.Ctx, "show-ref", "--tags").AddDashesAndList(name).RunStdString(&RunOpts{Dir: repo.Path})
+	ref, err := repo.Repository.Tag(name)
 	if err != nil {
 		return "", err
 	}
-	// Make sure exact match is used: "v1" != "release/v1"
-	for _, line := range strings.Split(stdout, "\n") {
-		fields := strings.Fields(line)
-		if len(fields) == 2 && fields[1] == "refs/tags/"+name {
-			return fields[0], nil
-		}
-	}
-	return "", ErrNotExist{ID: name}
+	return ref.Hash().String(), nil
 }
 
 // GetTag returns a Git tag by given name.

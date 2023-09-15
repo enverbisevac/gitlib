@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/storer"
 )
@@ -23,19 +24,6 @@ const BranchPrefix = "refs/heads/"
 // PullRequestPrefix special ref to create a pull request: refs/for/<targe-branch>/<topic-branch>
 // or refs/for/<targe-branch> -o topic='<topic-branch>'
 const PullRequestPrefix = "refs/for/"
-
-// TODO: /refs/for-review for suggest change interface
-
-// IsReferenceExist returns true if given reference exists in the repository.
-func IsReferenceExist(ctx context.Context, repoPath, name string) bool {
-	_, _, err := NewCommand(ctx, "show-ref", "--verify").AddDashesAndList(name).RunStdString(&RunOpts{Dir: repoPath})
-	return err == nil
-}
-
-// IsBranchExist returns true if given branch exists in the repository.
-func IsBranchExist(ctx context.Context, repoPath, name string) bool {
-	return IsReferenceExist(ctx, repoPath, BranchPrefix+name)
-}
 
 // Branch represents a Git branch.
 type Branch struct {
@@ -152,12 +140,10 @@ func (repo *Repository) DeleteBranch(name string, opts DeleteBranchOptions) erro
 
 // CreateBranch create a new branch
 func (repo *Repository) CreateBranch(branch, oldbranchOrCommit string) error {
-	cmd := NewCommand(repo.Ctx, "branch")
-	cmd.AddDashesAndList(branch, oldbranchOrCommit)
-
-	_, _, err := cmd.RunStdString(&RunOpts{Dir: repo.Path})
-
-	return err
+	return repo.Repository.CreateBranch(&config.Branch{
+		Name:  branch,
+		Merge: plumbing.ReferenceName(oldbranchOrCommit),
+	})
 }
 
 // AddRemote adds a new remote to repository.

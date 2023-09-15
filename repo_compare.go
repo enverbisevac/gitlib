@@ -20,6 +20,7 @@ import (
 	"time"
 
 	logger "github.com/enverbisevac/gitlib/log"
+	git2go "github.com/libgit2/git2go/v34"
 )
 
 // CompareInfo represents needed information for comparing references.
@@ -32,36 +33,38 @@ type CompareInfo struct {
 }
 
 // GetMergeBase checks and returns merge base of two branches and the reference used as base.
-func (repo *Repository) GetMergeBase(tmpRemote, base, head string) (string, string, error) {
-	if tmpRemote == "" {
-		tmpRemote = "origin"
+func (repo *Repository) GetMergeBase(tmpRemote, base, head string) (string, error) {
+	r, err := git2go.OpenRepository(repo.Path)
+	if err != nil {
+		return "", err
+	}
+	baseOid, err := git2go.NewOid(base)
+	if err != nil {
+		return "", err
+	}
+	headOid, err := git2go.NewOid(head)
+	if err != nil {
+		return "", err
+	}
+	commit, err := r.MergeBase(baseOid, headOid)
+	if err != nil {
+		return "", err
 	}
 
-	if tmpRemote != "origin" {
-		tmpBaseName := RemotePrefix + tmpRemote + "/tmp_" + base
-		// Fetch commit into a temporary branch in order to be able to handle commits and tags
-		_, _, err := NewCommand(repo.Ctx, "fetch", "--no-tags").AddDynamicArguments(tmpRemote).AddDashesAndList(base + ":" + tmpBaseName).RunStdString(&RunOpts{Dir: repo.Path})
-		if err == nil {
-			base = tmpBaseName
-		}
-	}
-
-	stdout, _, err := NewCommand(repo.Ctx, "merge-base").AddDashesAndList(base, head).RunStdString(&RunOpts{Dir: repo.Path})
-	return strings.TrimSpace(stdout), base, err
+	return commit.String(), nil
 }
 
 // GetCompareInfo generates and returns compare information between base and head branches of repositories.
-func (repo *Repository) GetCompareInfo(basePath, baseBranch, headBranch string, directComparison, fileOnly bool) (_ *CompareInfo, err error) {
+func (repo *Repository) GetCompareInfo(basePath, baseBranch, headBranch string, directComparison, fileOnly bool) (*CompareInfo, error) {
 	var (
-		remoteBranch string
-		tmpRemote    string
+		tmpRemote string
 	)
 
 	// We don't need a temporary remote for same repository.
 	if repo.Path != basePath {
 		// Add a temporary remote
 		tmpRemote = strconv.FormatInt(time.Now().UnixNano(), 10)
-		if err = repo.AddRemote(tmpRemote, basePath, false); err != nil {
+		if err := repo.AddRemote(tmpRemote, basePath, false); err != nil {
 			return nil, fmt.Errorf("AddRemote: %w", err)
 		}
 		defer func() {
@@ -71,18 +74,20 @@ func (repo *Repository) GetCompareInfo(basePath, baseBranch, headBranch string, 
 		}()
 	}
 
-	compareInfo := new(CompareInfo)
-
-	compareInfo.HeadCommitID, err = GetFullCommitID(repo.Ctx, repo.Path, headBranch)
+	headCommitID, err := GetFullCommitID(repo.Ctx, repo.Path, headBranch)
 	if err != nil {
-		compareInfo.HeadCommitID = headBranch
+		headCommitID = headBranch
 	}
 
-	compareInfo.MergeBase, remoteBranch, err = repo.GetMergeBase(tmpRemote, baseBranch, headBranch)
+	compareInfo := &CompareInfo{
+		HeadCommitID: headCommitID,
+	}
+
+	compareInfo.MergeBase, err = repo.GetMergeBase(tmpRemote, baseBranch, headBranch)
 	if err == nil {
-		compareInfo.BaseCommitID, err = GetFullCommitID(repo.Ctx, repo.Path, remoteBranch)
+		compareInfo.BaseCommitID, err = GetFullCommitID(repo.Ctx, repo.Path, baseBranch)
 		if err != nil {
-			compareInfo.BaseCommitID = remoteBranch
+			compareInfo.BaseCommitID = baseBranch
 		}
 		separator := "..."
 		baseCommitID := compareInfo.MergeBase
@@ -107,9 +112,9 @@ func (repo *Repository) GetCompareInfo(basePath, baseBranch, headBranch string, 
 		}
 	} else {
 		compareInfo.Commits = []*Commit{}
-		compareInfo.MergeBase, err = GetFullCommitID(repo.Ctx, repo.Path, remoteBranch)
+		compareInfo.MergeBase, err = GetFullCommitID(repo.Ctx, repo.Path, baseBranch)
 		if err != nil {
-			compareInfo.MergeBase = remoteBranch
+			compareInfo.MergeBase = baseBranch
 		}
 		compareInfo.BaseCommitID = compareInfo.MergeBase
 	}
@@ -117,7 +122,7 @@ func (repo *Repository) GetCompareInfo(basePath, baseBranch, headBranch string, 
 	// Count number of changed files.
 	// This probably should be removed as we need to use shortstat elsewhere
 	// Now there is git diff --shortstat but this appears to be slower than simply iterating with --nameonly
-	compareInfo.NumFiles, err = repo.GetDiffNumChangedFiles(remoteBranch, headBranch, directComparison)
+	compareInfo.NumFiles, err = repo.GetDiffNumChangedFiles(baseBranch, headBranch, directComparison)
 	if err != nil {
 		return nil, err
 	}

@@ -34,7 +34,7 @@ func TestGetFullCommitIDError(t *testing.T) {
 	id, err := GetFullCommitID(DefaultContext, bareRepo1Path, "unknown")
 	assert.Empty(t, id)
 	if assert.Error(t, err) {
-		assert.EqualError(t, err, "object does not exist [id: unknown, rel_path: ]")
+		assert.EqualError(t, err, "failed to get full commit id: revspec 'unknown' not found")
 	}
 }
 

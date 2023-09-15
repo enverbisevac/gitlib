@@ -141,7 +141,7 @@ func (repo *Repository) GetCodeActivityStats(fromTime time.Time, branch string) 
 		},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get GetCodeActivityStats for repository.\nError: %w\nStderr: %s", err, stderr)
+		return nil, fmt.Errorf("failed to get GetCodeActivityStats for repository.\nError: %w\nStderr: %s", err, stderr)
 	}
 
 	return stats, nil
