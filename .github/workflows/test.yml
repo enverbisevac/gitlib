@@ -11,6 +11,15 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      - name: Install libgit2
+        run: |
+          set -ex
+          LG2VER="1.5.0"
+          wget -O libgit2-${LG2VER}.tar.gz https://github.com/libgit2/libgit2/archive/v${LG2VER}.tar.gz
+          tar -xzvf libgit2-${LG2VER}.tar.gz
+          cd libgit2-${LG2VER} && mkdir build && cd build
+          cmake -DTHREADSAFE=ON -DBUILD_CLAR=OFF -DCMAKE_BUILD_TYPE="RelWithDebInfo" .. && make && sudo make install
+          sudo ldconfig
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
       - uses: actions/cache@v2
