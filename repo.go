@@ -20,8 +20,12 @@ import (
 	"time"
 
 	"github.com/enverbisevac/gitlib/util"
+	"github.com/go-git/go-billy/v5"
+	"github.com/go-git/go-billy/v5/osfs"
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/cache"
+	"github.com/go-git/go-git/v5/storage/filesystem"
 )
 
 // GPGSettings represents the default GPG settings for this repository
@@ -65,10 +69,73 @@ func IsRepoURLAccessible(ctx context.Context, url string) bool {
 	return err == nil
 }
 
+type InitRepositoryConfig struct {
+	bare          bool
+	defaultBranch string
+}
+
+type InitRepositoryFunc func(c *InitRepositoryConfig)
+
+func (f InitRepositoryFunc) Apply(c *InitRepositoryConfig) {
+	f(c)
+}
+
+func InitWithBare(value bool) InitRepositoryFunc {
+	return func(c *InitRepositoryConfig) {
+		c.bare = value
+	}
+}
+
+func InitWithDefaultBranch(value string) InitRepositoryFunc {
+	return func(c *InitRepositoryConfig) {
+		c.defaultBranch = value
+	}
+}
+
+type InitRepositoryOption interface {
+	Apply(c *InitRepositoryConfig)
+}
+
 // InitRepository initializes a new Git repository.
-func InitRepository(ctx context.Context, repoPath string, bare bool) error {
-	_, err := gogit.PlainInit(repoPath, bare)
-	return err
+func InitRepository(ctx context.Context, repoPath string, opts ...InitRepositoryOption) (*Repository, error) {
+	var wt, dot billy.Filesystem
+
+	c := InitRepositoryConfig{}
+	for _, opt := range opts {
+		opt.Apply(&c)
+	}
+
+	if c.bare {
+		dot = osfs.New(repoPath)
+	} else {
+		wt = osfs.New(repoPath)
+		dot, _ = wt.Chroot(gogit.GitDirName)
+	}
+
+	s := filesystem.NewStorage(dot, cache.NewObjectLRUDefault())
+
+	if c.defaultBranch == "" {
+		c.defaultBranch = "main"
+	}
+
+	if !strings.Contains(c.defaultBranch, "refs/heads") {
+		c.defaultBranch = "refs/heads/" + c.defaultBranch
+	}
+
+	repo, err := gogit.InitWithOptions(s, wt, gogit.InitOptions{
+		DefaultBranch: plumbing.ReferenceName(c.defaultBranch),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Repository{
+		Path:       repoPath,
+		Repository: repo,
+		storage:    s,
+		tagCache:   newObjectCache(),
+		Ctx:        ctx,
+	}, nil
 }
 
 // IsEmpty Check if repository is empty.

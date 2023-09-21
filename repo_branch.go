@@ -57,8 +57,14 @@ func (repo *Repository) GetHEADBranch() (*Branch, error) {
 
 // SetDefaultBranch sets default branch of repository.
 func (repo *Repository) SetDefaultBranch(name string) error {
-	_, _, err := NewCommand(repo.Ctx, "symbolic-ref", "HEAD").AddDynamicArguments(BranchPrefix + name).RunStdString(&RunOpts{Dir: repo.Path})
-	return err
+	headRef, err := repo.Head()
+	if err != nil {
+		return err
+	}
+	ref := plumbing.NewHashReference(plumbing.ReferenceName("refs/heads/"+name), headRef.Hash())
+
+	// The created reference is saved in the storage.
+	return repo.Repository.Storer.SetReference(ref)
 }
 
 // GetDefaultBranch gets default branch of repository.

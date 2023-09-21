@@ -46,7 +46,7 @@ func FindLFSFile(repo *Repository, hash SHA1) ([]*LFSResult, error) {
 		All:   true,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get GoGit CommitsIter. Error: %w", err)
+		return nil, fmt.Errorf("failed to get GoGit CommitsIter. Error: %w", err)
 	}
 
 	err = commitsIter.ForEach(func(gitCommit *object.Commit) error {
@@ -75,7 +75,7 @@ func FindLFSFile(repo *Repository, hash SHA1) ([]*LFSResult, error) {
 		return nil
 	})
 	if err != nil && err != io.EOF {
-		return nil, fmt.Errorf("Failure in CommitIter.ForEach: %w", err)
+		return nil, fmt.Errorf("failure in CommitIter.ForEach: %w", err)
 	}
 
 	for _, result := range resultsMap {
@@ -146,7 +146,7 @@ func FindLFSFile(repo *Repository, hash SHA1) ([]*LFSResult, error) {
 	select {
 	case err, has := <-errChan:
 		if has {
-			return nil, fmt.Errorf("Unable to obtain name for LFS files. Error: %w", err)
+			return nil, fmt.Errorf("unable to obtain name for LFS files. Error: %w", err)
 		}
 	default:
 	}

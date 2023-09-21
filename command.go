@@ -138,6 +138,23 @@ func (c *Command) AddDashesAndList(list ...string) *Command {
 	return c
 }
 
+// AddOptionFormat adds a new option with a format string and arguments
+// For example: AddOptionFormat("--opt=%s %s", val1, val2) means 1 argument: {"--opt=val1 val2"}.
+func (c *Command) AddOptionFormat(opt string, args ...any) *Command {
+	if !isValidArgumentOption(opt) {
+		c.brokenArgs = append(c.brokenArgs, opt)
+		return c
+	}
+	// a quick check to make sure the format string matches the number of arguments, to find low-level mistakes ASAP
+	if strings.Count(strings.ReplaceAll(opt, "%%", ""), "%") != len(args) {
+		c.brokenArgs = append(c.brokenArgs, opt)
+		return c
+	}
+	s := fmt.Sprintf(opt, args...)
+	c.args = append(c.args, s)
+	return c
+}
+
 // CmdArgCheck checks whether the string is safe to be used as a dynamic argument.
 // It panics if the check fails. Usually it should not be used, it's just for refactoring purpose
 // deprecated
@@ -376,4 +393,10 @@ func AllowLFSFiltersArgs() []CmdArg {
 		}
 	}
 	return filteredLFSGlobalArgs[:j]
+}
+
+// isValidArgumentOption checks if the argument is a valid option (starting with '-').
+// It doesn't check whether the option is supported or not
+func isValidArgumentOption(s string) bool {
+	return s != "" && s[0] == '-'
 }
