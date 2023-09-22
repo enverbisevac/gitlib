@@ -29,7 +29,7 @@ type Tree struct {
 }
 
 func (t *Tree) loadTreeObject() error {
-	gogitTree, err := t.repo.TreeObject(t.ID)
+	gogitTree, err := t.repo.gogit.TreeObject(t.ID)
 	if err != nil {
 		return err
 	}

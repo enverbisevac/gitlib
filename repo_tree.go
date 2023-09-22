@@ -23,7 +23,7 @@ type CommitTreeOpts struct {
 }
 
 func (repo *Repository) getTree(id SHA1) (*Tree, error) {
-	gogitTree, err := repo.TreeObject(id)
+	gogitTree, err := repo.gogit.TreeObject(id)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (repo *Repository) GetTree(idStr string) (*Tree, error) {
 		return nil, err
 	}
 	resolvedID := id
-	commitObject, err := repo.CommitObject(id)
+	commitObject, err := repo.gogit.CommitObject(id)
 	if err == nil {
 		id = SHA1(commitObject.TreeHash)
 	}

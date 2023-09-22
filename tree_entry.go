@@ -85,7 +85,7 @@ func (te *TreeEntry) IsExecutable() bool {
 
 // Blob returns the blob object the entry
 func (te *TreeEntry) Blob() *Blob {
-	encodedObj, err := te.ptree.repo.Storer.EncodedObject(plumbing.AnyObject, te.entry.Hash)
+	encodedObj, err := te.ptree.repo.gogit.Storer.EncodedObject(plumbing.AnyObject, te.entry.Hash)
 	if err != nil {
 		return nil
 	}

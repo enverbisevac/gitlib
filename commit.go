@@ -19,7 +19,6 @@ import (
 	"github.com/enverbisevac/gitlib/log"
 	"github.com/enverbisevac/gitlib/util"
 	cgobject "github.com/go-git/go-git/v5/plumbing/object/commitgraph"
-	git2go "github.com/libgit2/git2go/v34"
 )
 
 // Commit represents a git commit.
@@ -563,21 +562,6 @@ func GetCommitFileStatus(ctx context.Context, repoPath, commitID string) (*Commi
 
 	<-done
 	return fileStatus, nil
-}
-
-// GetFullCommitID returns full length (40) of commit ID by given short SHA in a repository.
-func GetFullCommitID(ctx context.Context, repoPath, shortID string) (string, error) {
-	r, err := git2go.OpenRepository(repoPath)
-	if err != nil {
-		return "", err
-	}
-
-	revspec, err := r.Revparse(shortID)
-	if err != nil {
-		return "", fmt.Errorf("failed to get full commit id: %w", err)
-	}
-
-	return revspec.From().Id().String(), nil
 }
 
 // GetRepositoryDefaultPublicGPGKey returns the default public key for this commit

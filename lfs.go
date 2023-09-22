@@ -41,7 +41,7 @@ func FindLFSFile(repo *Repository, hash SHA1) ([]*LFSResult, error) {
 
 	basePath := repo.Path
 
-	commitsIter, err := repo.Log(&gogit.LogOptions{
+	commitsIter, err := repo.gogit.Log(&gogit.LogOptions{
 		Order: gogit.LogOrderCommitterTime,
 		All:   true,
 	})

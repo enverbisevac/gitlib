@@ -34,10 +34,6 @@ type CompareInfo struct {
 
 // GetMergeBase checks and returns merge base of two branches and the reference used as base.
 func (repo *Repository) GetMergeBase(tmpRemote, base, head string) (string, error) {
-	r, err := git2go.OpenRepository(repo.Path)
-	if err != nil {
-		return "", err
-	}
 	baseOid, err := git2go.NewOid(base)
 	if err != nil {
 		return "", err
@@ -46,7 +42,7 @@ func (repo *Repository) GetMergeBase(tmpRemote, base, head string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	commit, err := r.MergeBase(baseOid, headOid)
+	commit, err := repo.git2go.MergeBase(baseOid, headOid)
 	if err != nil {
 		return "", err
 	}
@@ -74,7 +70,7 @@ func (repo *Repository) GetCompareInfo(basePath, baseBranch, headBranch string, 
 		}()
 	}
 
-	headCommitID, err := GetFullCommitID(repo.Ctx, repo.Path, headBranch)
+	headCommitID, err := repo.GetFullCommitID(headBranch)
 	if err != nil {
 		headCommitID = headBranch
 	}
@@ -85,7 +81,7 @@ func (repo *Repository) GetCompareInfo(basePath, baseBranch, headBranch string, 
 
 	compareInfo.MergeBase, err = repo.GetMergeBase(tmpRemote, baseBranch, headBranch)
 	if err == nil {
-		compareInfo.BaseCommitID, err = GetFullCommitID(repo.Ctx, repo.Path, baseBranch)
+		compareInfo.BaseCommitID, err = repo.GetFullCommitID(baseBranch)
 		if err != nil {
 			compareInfo.BaseCommitID = baseBranch
 		}
@@ -112,7 +108,7 @@ func (repo *Repository) GetCompareInfo(basePath, baseBranch, headBranch string, 
 		}
 	} else {
 		compareInfo.Commits = []*Commit{}
-		compareInfo.MergeBase, err = GetFullCommitID(repo.Ctx, repo.Path, baseBranch)
+		compareInfo.MergeBase, err = repo.GetFullCommitID(baseBranch)
 		if err != nil {
 			compareInfo.MergeBase = baseBranch
 		}

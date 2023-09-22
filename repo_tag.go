@@ -22,13 +22,13 @@ const TagPrefix = "refs/tags/"
 
 // CreateTag create one tag in the repository
 func (repo *Repository) CreateTag(name, revision string) error {
-	_, err := repo.Repository.CreateTag(name, plumbing.NewHash(revision), nil)
+	_, err := repo.gogit.CreateTag(name, plumbing.NewHash(revision), nil)
 	return err
 }
 
 // CreateAnnotatedTag create one annotated tag in the repository
 func (repo *Repository) CreateAnnotatedTag(name, message, revision string) error {
-	_, err := repo.Repository.CreateTag(name, plumbing.NewHash(revision), &git.CreateTagOptions{Message: message})
+	_, err := repo.gogit.CreateTag(name, plumbing.NewHash(revision), &git.CreateTagOptions{Message: message})
 	return err
 }
 
@@ -61,7 +61,7 @@ func (repo *Repository) GetTagNameBySHA(sha string) (string, error) {
 
 // GetTagID returns the object ID for a tag (annotated tags have both an object SHA AND a commit SHA)
 func (repo *Repository) GetTagID(name string) (string, error) {
-	ref, err := repo.Repository.Tag(name)
+	ref, err := repo.gogit.Tag(name)
 	if err != nil {
 		return "", err
 	}
@@ -225,7 +225,7 @@ func (repo *Repository) GetAnnotatedTag(sha string) (*Tag, error) {
 
 // IsTagExist returns true if given tag exists in the repository.
 func (repo *Repository) IsTagExist(name string) bool {
-	_, err := repo.Reference(plumbing.ReferenceName(TagPrefix+name), true)
+	_, err := repo.gogit.Reference(plumbing.ReferenceName(TagPrefix+name), true)
 	return err == nil
 }
 
@@ -234,7 +234,7 @@ func (repo *Repository) IsTagExist(name string) bool {
 func (repo *Repository) GetTags(skip, limit int) ([]string, error) {
 	var tagNames []string
 
-	tags, err := repo.Tags()
+	tags, err := repo.gogit.Tags()
 	if err != nil {
 		return nil, err
 	}
@@ -266,7 +266,7 @@ func (repo *Repository) GetTags(skip, limit int) ([]string, error) {
 // GetTagType gets the type of the tag, either commit (simple) or tag (annotated)
 func (repo *Repository) GetTagType(id SHA1) (string, error) {
 	// Get tag type
-	obj, err := repo.Object(plumbing.AnyObject, id)
+	obj, err := repo.gogit.Object(plumbing.AnyObject, id)
 	if err != nil {
 		if err == plumbing.ErrReferenceNotFound {
 			return "", &ErrNotExist{ID: id.String()}
@@ -321,7 +321,7 @@ func (repo *Repository) getTag(tagID SHA1, name string) (*Tag, error) {
 		return tag, nil
 	}
 
-	gogitTag, err := repo.TagObject(tagID)
+	gogitTag, err := repo.gogit.TagObject(tagID)
 	if err != nil {
 		if err == plumbing.ErrReferenceNotFound {
 			return nil, &ErrNotExist{ID: tagID.String()}

@@ -20,24 +20,6 @@ func TestCommitsCount(t *testing.T) {
 	assert.Equal(t, int64(3), commitsCount)
 }
 
-func TestGetFullCommitID(t *testing.T) {
-	bareRepo1Path := filepath.Join(testReposDir, "repo1_bare")
-
-	id, err := GetFullCommitID(DefaultContext, bareRepo1Path, "8006ff9a")
-	assert.NoError(t, err)
-	assert.Equal(t, "8006ff9adbf0cb94da7dad9e537e53817f9fa5c0", id)
-}
-
-func TestGetFullCommitIDError(t *testing.T) {
-	bareRepo1Path := filepath.Join(testReposDir, "repo1_bare")
-
-	id, err := GetFullCommitID(DefaultContext, bareRepo1Path, "unknown")
-	assert.Empty(t, id)
-	if assert.Error(t, err) {
-		assert.EqualError(t, err, "failed to get full commit id: revspec 'unknown' not found")
-	}
-}
-
 func TestCommitFromReader(t *testing.T) {
 	commitString := `feaf4ba6bc635fec442f46ddd4512416ec43c2c2 commit 1074
 tree f1a6cb52b2d16773290cefe49ad0684b50a4f930

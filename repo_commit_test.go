@@ -100,3 +100,27 @@ func TestRepository_CommitsBetweenIDs(t *testing.T) {
 		assert.Equal(t, c.ExpectedCommits, len(commits), "case %d", i)
 	}
 }
+
+func TestGetFullCommitID(t *testing.T) {
+	bareRepo1Path := filepath.Join(testReposDir, "repo1_bare")
+	bareRepo1, err := openRepositoryWithDefaultContext(bareRepo1Path)
+	assert.NoError(t, err)
+	defer bareRepo1.Close()
+
+	id, err := bareRepo1.GetFullCommitID("8006ff9a")
+	assert.NoError(t, err)
+	assert.Equal(t, "8006ff9adbf0cb94da7dad9e537e53817f9fa5c0", id)
+}
+
+func TestGetFullCommitIDError(t *testing.T) {
+	bareRepo1Path := filepath.Join(testReposDir, "repo1_bare")
+	bareRepo1, err := openRepositoryWithDefaultContext(bareRepo1Path)
+	assert.NoError(t, err)
+	defer bareRepo1.Close()
+
+	id, err := bareRepo1.GetFullCommitID("unknown")
+	assert.Empty(t, id)
+	if assert.Error(t, err) {
+		assert.EqualError(t, err, "failed to get full commit id: revspec 'unknown' not found")
+	}
+}

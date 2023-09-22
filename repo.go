@@ -15,6 +15,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -130,17 +131,17 @@ func InitRepository(ctx context.Context, repoPath string, opts ...InitRepository
 	}
 
 	return &Repository{
-		Path:       repoPath,
-		Repository: repo,
-		storage:    s,
-		tagCache:   newObjectCache(),
-		Ctx:        ctx,
+		Path:     repoPath,
+		gogit:    repo,
+		storage:  s,
+		tagCache: newObjectCache(),
+		Ctx:      ctx,
 	}, nil
 }
 
 // IsEmpty Check if repository is empty.
 func (repo *Repository) IsEmpty() (bool, error) {
-	_, err := repo.Head()
+	_, err := repo.gogit.Head()
 	if err != nil {
 		if errors.Is(err, plumbing.ErrReferenceNotFound) {
 			return true, nil
@@ -232,7 +233,16 @@ func CloneWithArgs(ctx context.Context, args []CmdArg, from, to string, opts Clo
 		Stdout:  io.Discard,
 		Stderr:  stderr,
 	}); err != nil {
-		return ConcatenateError(err, stderr.String())
+		err = ConcatenateError(err, stderr.String())
+		if matched, _ := regexp.MatchString(".*Remote branch .* not found in upstream origin.*", err.Error()); matched {
+			return ErrBranchNotExist{
+				Name: opts.Branch,
+			}
+		} else if matched, _ := regexp.MatchString(".* repository .* does not exist.*", err.Error()); matched {
+			return fmt.Errorf("repository not found: %w", err)
+		} else {
+			return fmt.Errorf("error while cloning repository: %w", err)
+		}
 	}
 	return nil
 }

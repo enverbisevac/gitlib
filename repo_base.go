@@ -15,6 +15,7 @@ import (
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/cache"
 	"github.com/go-git/go-git/v5/storage/filesystem"
+	git2go "github.com/libgit2/git2go/v34"
 )
 
 // contextKey is a value for use with context.WithValue.
@@ -58,8 +59,11 @@ func RepositoryFromContextOrOpen(ctx context.Context, path string) (*Repository,
 
 // Repository represents a Git repository.
 type Repository struct {
-	*gogit.Repository
-	Path string
+	// initialy work with gogit
+	gogit *gogit.Repository
+	// if gogit doesnt have implementation use git2go
+	git2go *git2go.Repository
+	Path   string
 
 	tagCache *ObjectCache
 
@@ -92,18 +96,26 @@ func OpenRepository(ctx context.Context, repoPath string) (*Repository, error) {
 			return nil, err
 		}
 	}
+	// gogit
 	storage := filesystem.NewStorageWithOptions(fs, cache.NewObjectLRUDefault(), filesystem.Options{KeepDescriptors: true, LargeObjectThreshold: Git.LargeObjectThreshold})
-	repo, err := gogit.Open(storage, fs)
+	gogitrepo, err := gogit.Open(storage, fs)
+	if err != nil {
+		return nil, err
+	}
+
+	//libgit2
+	git2gorepo, err := git2go.OpenRepository(repoPath)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Repository{
-		Path:       repoPath,
-		Repository: repo,
-		storage:    storage,
-		tagCache:   newObjectCache(),
-		Ctx:        ctx,
+		Path:     repoPath,
+		gogit:    gogitrepo,
+		git2go:   git2gorepo,
+		storage:  storage,
+		tagCache: newObjectCache(),
+		Ctx:      ctx,
 	}, nil
 }
 

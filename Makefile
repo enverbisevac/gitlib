@@ -25,6 +25,7 @@ lint: $(GOPATH)/bin/golangci-lint ## Run golangci-lint
 
 .PHONY: test
 test: ## Run unit tests with coverage
+	@go clean -testcache
 	@go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
 
 .PHONY: coverage

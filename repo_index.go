@@ -7,8 +7,10 @@ package git
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/enverbisevac/gitlib/log"
@@ -112,8 +114,18 @@ func (repo *Repository) RemoveFilesFromIndex(filenames ...string) error {
 // AddObjectToIndex adds the provided object hash to the index at the provided filename
 func (repo *Repository) AddObjectToIndex(mode string, object SHA1, filename string) error {
 	cmd := NewCommand(repo.Ctx, "update-index", "--add", "--replace", "--cacheinfo").AddDynamicArguments(mode, object.String(), filename)
-	_, _, err := cmd.RunStdString(&RunOpts{Dir: repo.Path})
-	return err
+	_, stderr, err := cmd.RunStdString(&RunOpts{Dir: repo.Path})
+	if err != nil {
+		if matched, _ := regexp.MatchString(".*Invalid path '.*", stderr); matched {
+			return ErrFilePathInvalid{
+				Message: filename,
+				Path:    filename,
+			}
+		}
+		return fmt.Errorf("unable to add object to index at %s in repo %s Error: %w - %s", object, repo.Path, err, stderr)
+	}
+
+	return nil
 }
 
 // WriteTree writes the current index as a tree to the object db and returns its hash

@@ -37,6 +37,16 @@ func (repo *Repository) GetCommit(commitID string) (*Commit, error) {
 	return repo.getCommit(id)
 }
 
+// GetFullCommitID returns full length (40) of commit ID by given short SHA in a repository.
+func (repo *Repository) GetFullCommitID(shortID string) (string, error) {
+	revspec, err := repo.git2go.RevparseSingle(shortID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get full commit id: %w", err)
+	}
+
+	return revspec.Id().String(), nil
+}
+
 // GetBranchCommit returns the last commit of given branch.
 func (repo *Repository) GetBranchCommit(name string) (*Commit, error) {
 	commitID, err := repo.GetBranchCommitID(name)
@@ -472,7 +482,7 @@ func (repo *Repository) AddLastCommitCache(cacheKey, fullName, sha string) error
 
 // GetRefCommitID returns the last commit ID string of given reference (branch or tag).
 func (repo *Repository) GetRefCommitID(name string) (string, error) {
-	ref, err := repo.Reference(plumbing.ReferenceName(name), true)
+	ref, err := repo.gogit.Reference(plumbing.ReferenceName(name), true)
 	if err != nil {
 		if err == plumbing.ErrReferenceNotFound {
 			return "", ErrNotExist{
@@ -487,12 +497,12 @@ func (repo *Repository) GetRefCommitID(name string) (string, error) {
 
 // SetReference sets the commit ID string of given reference (e.g. branch or tag).
 func (repo *Repository) SetReference(name, commitID string) error {
-	return repo.Storer.SetReference(plumbing.NewReferenceFromStrings(name, commitID))
+	return repo.gogit.Storer.SetReference(plumbing.NewReferenceFromStrings(name, commitID))
 }
 
 // RemoveReference removes the given reference (e.g. branch or tag).
 func (repo *Repository) RemoveReference(name string) error {
-	return repo.Storer.RemoveReference(plumbing.ReferenceName(name))
+	return repo.gogit.Storer.RemoveReference(plumbing.ReferenceName(name))
 }
 
 // ConvertToSHA1 returns a Hash object from a potential ID string
@@ -519,7 +529,7 @@ func (repo *Repository) ConvertToSHA1(commitID string) (SHA1, error) {
 // IsCommitExist returns true if given commit exists in current repository.
 func (repo *Repository) IsCommitExist(name string) bool {
 	hash := plumbing.NewHash(name)
-	_, err := repo.CommitObject(hash)
+	_, err := repo.gogit.CommitObject(hash)
 	return err == nil
 }
 
@@ -558,16 +568,16 @@ func convertPGPSignatureForTag(t *object.Tag) *CommitGPGSignature {
 func (repo *Repository) getCommit(id SHA1) (*Commit, error) {
 	var tagObject *object.Tag
 
-	gogitCommit, err := repo.CommitObject(id)
+	gogitCommit, err := repo.gogit.CommitObject(id)
 	if err == plumbing.ErrObjectNotFound {
-		tagObject, err = repo.TagObject(id)
+		tagObject, err = repo.gogit.TagObject(id)
 		if err == plumbing.ErrObjectNotFound {
 			return nil, ErrNotExist{
 				ID: id.String(),
 			}
 		}
 		if err == nil {
-			gogitCommit, err = repo.CommitObject(tagObject.Target)
+			gogitCommit, err = repo.gogit.CommitObject(tagObject.Target)
 		}
 		// if we get a plumbing.ErrObjectNotFound here then the repository is broken and it should be 500
 	}
