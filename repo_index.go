@@ -15,35 +15,69 @@ import (
 
 	"github.com/enverbisevac/gitlib/log"
 	"github.com/enverbisevac/gitlib/util"
+	git2go "github.com/libgit2/git2go/v34"
 )
 
 // ReadTreeToIndex reads a treeish to the index
-func (repo *Repository) ReadTreeToIndex(treeish string, indexFilename ...string) error {
+func (repo *Repository) ReadTreeToIndex(treeish string, indexFilename string) (err error) {
 	if len(treeish) != 40 {
-		res, _, err := NewCommand(repo.Ctx, "rev-parse", "--verify").AddDynamicArguments(treeish).RunStdString(&RunOpts{Dir: repo.Path})
+		treeish, err = repo.GetFullCommitID(treeish)
 		if err != nil {
 			return err
-		}
-		if len(res) > 0 {
-			treeish = res[:len(res)-1]
 		}
 	}
 	id, err := NewIDFromString(treeish)
 	if err != nil {
 		return err
 	}
-	return repo.readTreeToIndex(id, indexFilename...)
+	return repo.readTreeToIndex(id, indexFilename)
 }
 
-func (repo *Repository) readTreeToIndex(id SHA1, indexFilename ...string) error {
-	var env []string
-	if len(indexFilename) > 0 {
-		env = append(os.Environ(), "GIT_INDEX_FILE="+indexFilename[0])
+func (repo *Repository) readTreeToIndex(id SHA1, indexFilename string) error {
+	var (
+		index *git2go.Index
+		err   error
+	)
+
+	if indexFilename != "" {
+		index, err = git2go.OpenIndex(indexFilename)
+	} else {
+		index, err = git2go.NewIndex()
 	}
-	_, _, err := NewCommand(repo.Ctx, "read-tree").AddDynamicArguments(id.String()).RunStdString(&RunOpts{Dir: repo.Path, Env: env})
 	if err != nil {
 		return err
 	}
+
+	oid, err := git2go.NewOid(id.String())
+	if err != nil {
+		return err
+	}
+
+	ref, err := repo.git2go.LookupCommit(oid)
+	if err != nil {
+		return err
+	}
+
+	obj, err := ref.Peel(git2go.ObjectTree)
+	if err != nil {
+		return err
+	}
+
+	tree, err := obj.AsTree()
+	if err != nil {
+		return err
+	}
+
+	err = index.ReadTree(tree)
+	if err != nil {
+		return err
+	}
+
+	err = index.Write()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
