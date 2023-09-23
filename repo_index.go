@@ -11,10 +11,10 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 
 	"github.com/enverbisevac/gitlib/log"
 	"github.com/enverbisevac/gitlib/util"
+	"github.com/go-git/go-git/v5/plumbing"
 	git2go "github.com/libgit2/git2go/v34"
 )
 
@@ -164,13 +164,14 @@ func (repo *Repository) AddObjectToIndex(mode string, object SHA1, filename stri
 
 // WriteTree writes the current index as a tree to the object db and returns its hash
 func (repo *Repository) WriteTree() (*Tree, error) {
-	stdout, _, runErr := NewCommand(repo.Ctx, "write-tree").RunStdString(&RunOpts{Dir: repo.Path})
-	if runErr != nil {
-		return nil, runErr
-	}
-	id, err := NewIDFromString(strings.TrimSpace(stdout))
+	ndx, err := repo.git2go.Index()
 	if err != nil {
 		return nil, err
 	}
-	return NewTree(repo, id), nil
+	oid, err := ndx.WriteTree()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewTree(repo, plumbing.NewHash(oid.String())), nil
 }

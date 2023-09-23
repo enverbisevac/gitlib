@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/url"
 	"os"
 	"path"
@@ -27,6 +28,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/cache"
 	"github.com/go-git/go-git/v5/storage/filesystem"
+	git2go "github.com/libgit2/git2go/v34"
 )
 
 // GPGSettings represents the default GPG settings for this repository
@@ -73,6 +75,7 @@ func IsRepoURLAccessible(ctx context.Context, url string) bool {
 type InitRepositoryConfig struct {
 	bare          bool
 	defaultBranch string
+	description   string
 }
 
 type InitRepositoryFunc func(c *InitRepositoryConfig)
@@ -90,6 +93,12 @@ func InitWithBare(value bool) InitRepositoryFunc {
 func InitWithDefaultBranch(value string) InitRepositoryFunc {
 	return func(c *InitRepositoryConfig) {
 		c.defaultBranch = value
+	}
+}
+
+func InitWithDescription(value string) InitRepositoryFunc {
+	return func(c *InitRepositoryConfig) {
+		c.description = value
 	}
 }
 
@@ -123,6 +132,7 @@ func InitRepository(ctx context.Context, repoPath string, opts ...InitRepository
 		c.defaultBranch = "refs/heads/" + c.defaultBranch
 	}
 
+	// gogit
 	repo, err := gogit.InitWithOptions(s, wt, gogit.InitOptions{
 		DefaultBranch: plumbing.ReferenceName(c.defaultBranch),
 	})
@@ -130,9 +140,25 @@ func InitRepository(ctx context.Context, repoPath string, opts ...InitRepository
 		return nil, err
 	}
 
+	//libgit2
+	git2gorepo, err := git2go.OpenRepository(repoPath)
+	if err != nil {
+		return nil, err
+	}
+
+	f, err := os.Create(path.Join(repoPath, "description"))
+	if err == nil {
+		defer f.Close()
+		f.WriteString(c.description)
+		f.Sync()
+	} else {
+		log.Printf("error writing description file for repository '%s'", repoPath)
+	}
+
 	return &Repository{
 		Path:     repoPath,
 		gogit:    repo,
+		git2go:   git2gorepo,
 		storage:  s,
 		tagCache: newObjectCache(),
 		Ctx:      ctx,

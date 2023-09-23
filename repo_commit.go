@@ -38,8 +38,8 @@ func (repo *Repository) GetCommit(commitID string) (*Commit, error) {
 }
 
 // GetFullCommitID returns full length (40) of commit ID by given short SHA in a repository.
-func (repo *Repository) GetFullCommitID(shortID string) (string, error) {
-	revspec, err := repo.git2go.RevparseSingle(shortID)
+func (repo *Repository) GetFullCommitID(ref string) (string, error) {
+	revspec, err := repo.git2go.RevparseSingle(ref)
 	if err != nil {
 		return "", fmt.Errorf("failed to get full commit id: %w", err)
 	}
