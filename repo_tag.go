@@ -33,30 +33,31 @@ func (repo *Repository) CreateAnnotatedTag(name, message, revision string) error
 }
 
 // GetTagNameBySHA returns the name of a tag from its tag object SHA or commit SHA
-func (repo *Repository) GetTagNameBySHA(sha string) (string, error) {
+func (repo *Repository) GetTagNameBySHA(sha string) (s string, err error) {
 	if len(sha) < 5 {
 		return "", fmt.Errorf("SHA is too short: %s", sha)
 	}
 
-	stdout, _, err := NewCommand(repo.Ctx, "show-ref", "--tags", "-d").RunStdString(&RunOpts{Dir: repo.Path})
+	iter, err := repo.gogit.Tags()
 	if err != nil {
 		return "", err
 	}
 
-	tagRefs := strings.Split(stdout, "\n")
-	for _, tagRef := range tagRefs {
-		if len(strings.TrimSpace(tagRef)) > 0 {
-			fields := strings.Fields(tagRef)
-			if strings.HasPrefix(fields[0], sha) && strings.HasPrefix(fields[1], TagPrefix) {
-				name := fields[1][len(TagPrefix):]
-				// annotated tags show up twice, we should only return if is not the ^{} ref
-				if !strings.HasSuffix(name, "^{}") {
-					return name, nil
-				}
-			}
+	if err := iter.ForEach(func(ref *plumbing.Reference) error {
+		tag, err := repo.gogit.TagObject(plumbing.NewHash(sha))
+		switch err {
+		case nil:
+			s = strings.TrimPrefix(tag.Name, TagPrefix)
+			return nil
+		case plumbing.ErrObjectNotFound:
+			return ErrNotExist{ID: sha}
+		default:
+			return err
 		}
+	}); err != nil {
+		return "", err
 	}
-	return "", ErrNotExist{ID: sha}
+	return s, nil
 }
 
 // GetTagID returns the object ID for a tag (annotated tags have both an object SHA AND a commit SHA)

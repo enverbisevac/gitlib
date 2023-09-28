@@ -5,17 +5,17 @@
 package git
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
+	"strings"
 
 	"github.com/enverbisevac/gitlib/log"
 	"github.com/enverbisevac/gitlib/util"
 	"github.com/go-git/go-git/v5/plumbing"
 	git2go "github.com/libgit2/git2go/v34"
+	"golang.org/x/exp/slices"
 )
 
 // ReadTreeToIndex reads a treeish to the index
@@ -111,52 +111,72 @@ func (repo *Repository) EmptyIndex() error {
 
 // LsFiles checks if the given filenames are in the index
 func (repo *Repository) LsFiles(filenames ...string) ([]string, error) {
-	cmd := NewCommand(repo.Ctx, "ls-files", "-z").AddDashesAndList(filenames...)
-	res, _, err := cmd.RunStdBytes(&RunOpts{Dir: repo.Path})
+
+	ref, err := repo.gogit.Head()
+	if err != nil {
+		if strings.Contains(err.Error(), "reference not found") {
+			return []string{}, nil
+		}
+		return nil, err
+	}
+
+	commit, err := repo.gogit.CommitObject(ref.Hash())
 	if err != nil {
 		return nil, err
 	}
-	filelist := make([]string, 0, len(filenames))
-	for _, line := range bytes.Split(res, []byte{'\000'}) {
-		filelist = append(filelist, string(line))
+
+	tree, err := commit.Tree()
+	if err != nil {
+		return nil, err
 	}
 
-	return filelist, err
+	paths := make([]string, 0, len(filenames))
+	for _, entry := range tree.Entries {
+		if slices.Contains(filenames, entry.Name) {
+			paths = append(paths, entry.Name)
+		}
+	}
+
+	return paths, err
 }
 
 // RemoveFilesFromIndex removes given filenames from the index - it does not check whether they are present.
 func (repo *Repository) RemoveFilesFromIndex(filenames ...string) error {
-	cmd := NewCommand(repo.Ctx, "update-index", "--remove", "-z", "--index-info")
-	stdout := new(bytes.Buffer)
-	stderr := new(bytes.Buffer)
-	buffer := new(bytes.Buffer)
+	ndx, err := repo.git2go.Index()
+	if err != nil {
+		return err
+	}
+
 	for _, file := range filenames {
 		if file != "" {
-			buffer.WriteString("0 0000000000000000000000000000000000000000\t")
-			buffer.WriteString(file)
-			buffer.WriteByte('\000')
+			err = ndx.RemoveByPath(file)
+			if err != nil {
+				return err
+			}
 		}
 	}
-	return cmd.Run(&RunOpts{
-		Dir:    repo.Path,
-		Stdin:  bytes.NewReader(buffer.Bytes()),
-		Stdout: stdout,
-		Stderr: stderr,
-	})
+	return nil
 }
 
 // AddObjectToIndex adds the provided object hash to the index at the provided filename
 func (repo *Repository) AddObjectToIndex(mode string, object SHA1, filename string) error {
-	cmd := NewCommand(repo.Ctx, "update-index", "--add", "--replace", "--cacheinfo").AddDynamicArguments(mode, object.String(), filename)
-	_, stderr, err := cmd.RunStdString(&RunOpts{Dir: repo.Path})
+	ndx, err := repo.git2go.Index()
 	if err != nil {
-		if matched, _ := regexp.MatchString(".*Invalid path '.*", stderr); matched {
-			return ErrFilePathInvalid{
-				Message: filename,
-				Path:    filename,
-			}
-		}
-		return fmt.Errorf("unable to add object to index at %s in repo %s Error: %w - %s", object, repo.Path, err, stderr)
+		return err
+	}
+
+	oid, err := git2go.NewOid(object.String())
+	if err != nil {
+		return err
+	}
+
+	err = ndx.Add(&git2go.IndexEntry{
+		Mode: git2go.FilemodeBlob,
+		Id:   oid,
+		Path: filename,
+	})
+	if err != nil {
+		return fmt.Errorf("unable to add object to index at %s in repo %s: %w", object, repo.Path, err)
 	}
 
 	return nil

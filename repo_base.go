@@ -96,8 +96,16 @@ func OpenRepository(ctx context.Context, repoPath string) (*Repository, error) {
 			return nil, err
 		}
 	}
+
 	// gogit
-	storage := filesystem.NewStorageWithOptions(fs, cache.NewObjectLRUDefault(), filesystem.Options{KeepDescriptors: true, LargeObjectThreshold: Git.LargeObjectThreshold})
+	storage := filesystem.NewStorageWithOptions(
+		fs,
+		cache.NewObjectLRUDefault(),
+		filesystem.Options{
+			KeepDescriptors:      true,
+			LargeObjectThreshold: Git.LargeObjectThreshold,
+		},
+	)
 	gogitrepo, err := gogit.Open(storage, fs)
 	if err != nil {
 		return nil, err

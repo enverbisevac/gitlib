@@ -1,14 +1,7 @@
-// Copyright 2014 The Gogs Authors. All rights reserved.
-// Copyright 2019 The Gitea Authors. All rights reserved.
-// Use of this source code is governed by a MIT-style
-// license that can be found in the LICENSE file.
-
 package git
 
 import (
-	"bytes"
 	"io"
-	"strings"
 )
 
 // ObjectType git object type
@@ -42,19 +35,22 @@ func (repo *Repository) HashObject(reader io.Reader) (SHA1, error) {
 }
 
 func (repo *Repository) hashObject(reader io.Reader) (string, error) {
-	cmd := NewCommand(repo.Ctx, "hash-object", "-w", "--stdin")
-	stdout := new(bytes.Buffer)
-	stderr := new(bytes.Buffer)
-	err := cmd.Run(&RunOpts{
-		Dir:    repo.Path,
-		Stdin:  reader,
-		Stdout: stdout,
-		Stderr: stderr,
-	})
+	stream, err := repo.git2go.CreateFromStream("")
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(stdout.String()), nil
+	defer stream.Free()
+
+	_, err = io.Copy(stream, reader)
+	if err != nil {
+		return "", err
+	}
+
+	oid, err := stream.Commit()
+	if err != nil {
+		return "", err
+	}
+	return oid.String(), nil
 }
 
 // GetRefType gets the type of the ref based on the string

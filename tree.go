@@ -1,20 +1,44 @@
-// Copyright 2015 The Gogs Authors. All rights reserved.
-// Copyright 2019 The Gitea Authors. All rights reserved.
-// Use of this source code is governed by a MIT-style
-// license that can be found in the LICENSE file.
-
 package git
 
 import (
-	"bytes"
 	"io"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
+
+// EntryMode the type of the object in the git tree
+type EntryMode int
+
+// There are only a few file modes in Git. They look like unix file modes, but they can only be
+// one of these.
+const (
+	// EntryModeBlob
+	EntryModeBlob EntryMode = 0o100644
+	// EntryModeExec
+	EntryModeExec EntryMode = 0o100755
+	// EntryModeSymlink
+	EntryModeSymlink EntryMode = 0o120000
+	// EntryModeCommit
+	EntryModeCommit EntryMode = 0o160000
+	// EntryModeTree
+	EntryModeTree EntryMode = 0o040000
+)
+
+// String converts an EntryMode to a string
+func (e EntryMode) String() string {
+	return strconv.FormatInt(int64(e), 8)
+}
+
+// ToEntryMode converts a string to an EntryMode
+func ToEntryMode(value string) EntryMode {
+	v, _ := strconv.ParseInt(value, 8, 32)
+	return EntryMode(v)
+}
 
 // Tree represents a flat directory listing.
 type Tree struct {
@@ -186,19 +210,16 @@ func (t *Tree) GetTreeEntryByPath(relpath string) (*TreeEntry, error) {
 	return nil, ErrNotExist{"", relpath}
 }
 
-// LsTree checks if the given filenames are in the tree
-func (repo *Repository) LsTree(ref string, filenames ...string) ([]string, error) {
-	cmd := NewCommand(repo.Ctx, "ls-tree", "-z", "--name-only").
-		AddDashesAndList(append([]string{ref}, filenames...)...)
-
-	res, _, err := cmd.RunStdBytes(&RunOpts{Dir: repo.Path})
+// GetBlobByPath get the blob object according the path
+func (t *Tree) GetBlobByPath(relpath string) (*Blob, error) {
+	entry, err := t.GetTreeEntryByPath(relpath)
 	if err != nil {
 		return nil, err
 	}
-	filelist := make([]string, 0, len(filenames))
-	for _, line := range bytes.Split(res, []byte{'\000'}) {
-		filelist = append(filelist, string(line))
+
+	if !entry.IsDir() && !entry.IsSubModule() {
+		return entry.Blob(), nil
 	}
 
-	return filelist, err
+	return nil, ErrNotExist{"", relpath}
 }
