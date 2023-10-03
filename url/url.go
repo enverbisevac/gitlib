@@ -47,7 +47,8 @@ func Parse(remote string) (*GitURL, error) {
 			return nil, err
 		}
 		return &GitURL{URL: u}, nil
-	} else if strings.Contains(remote, "@") && strings.Contains(remote, ":") {
+	}
+	if strings.Contains(remote, "@") && strings.Contains(remote, ":") {
 		url := stdurl.URL{
 			Scheme: "ssh",
 		}

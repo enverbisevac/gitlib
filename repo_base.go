@@ -137,5 +137,6 @@ func (repo *Repository) Close() (err error) {
 	}
 	repo.LastCommitCache = nil
 	repo.tagCache = nil
+	repo.git2go.Free()
 	return
 }

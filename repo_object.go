@@ -2,6 +2,8 @@ package git
 
 import (
 	"io"
+
+	"github.com/go-git/go-git/v5/plumbing"
 )
 
 // ObjectType git object type
@@ -35,33 +37,44 @@ func (repo *Repository) HashObject(reader io.Reader) (SHA1, error) {
 }
 
 func (repo *Repository) hashObject(reader io.Reader) (string, error) {
-	stream, err := repo.git2go.CreateFromStream("")
-	if err != nil {
-		return "", err
-	}
-	defer stream.Free()
+	obj := repo.gogit.Storer.NewEncodedObject()
+	obj.SetType(plumbing.BlobObject)
 
-	_, err = io.Copy(stream, reader)
+	w, err := obj.Writer()
 	if err != nil {
 		return "", err
 	}
 
-	oid, err := stream.Commit()
+	_, err = io.Copy(w, reader)
 	if err != nil {
 		return "", err
 	}
-	return oid.String(), nil
+
+	err = w.Close()
+	if err != nil {
+		return "", err
+	}
+
+	h, err := repo.gogit.Storer.SetEncodedObject(obj)
+	if err != nil {
+		return "", err
+	}
+
+	return h.String(), nil
 }
 
 // GetRefType gets the type of the ref based on the string
 func (repo *Repository) GetRefType(ref string) ObjectType {
 	if repo.IsTagExist(ref) {
 		return ObjectTag
-	} else if repo.IsBranchExist(ref) {
+	}
+	if repo.IsBranchExist(ref) {
 		return ObjectBranch
-	} else if repo.IsCommitExist(ref) {
+	}
+	if repo.IsCommitExist(ref) {
 		return ObjectCommit
-	} else if _, err := repo.GetBlob(ref); err == nil {
+	}
+	if _, err := repo.GetBlob(ref); err == nil {
 		return ObjectBlob
 	}
 	return ObjectType("invalid")
