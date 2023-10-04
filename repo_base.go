@@ -63,14 +63,15 @@ type Repository struct {
 	gogit *gogit.Repository
 	// if gogit doesnt have implementation use git2go
 	git2go *git2go.Repository
-	Path   string
 
-	tagCache *ObjectCache
+	Path string
 
 	storage     *filesystem.Storage
 	gpgSettings *GPGSettings
 
-	Ctx             context.Context
+	Ctx context.Context
+
+	tagCache        *ObjectCache
 	LastCommitCache *LastCommitCache
 }
 

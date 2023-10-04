@@ -25,6 +25,7 @@ import (
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/osfs"
 	gogit "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/cache"
 	"github.com/go-git/go-git/v5/storage/filesystem"
@@ -283,69 +284,15 @@ type PushOptions struct {
 	Timeout time.Duration
 }
 
-// Push pushs local commits to given remote branch.
-func Push(ctx context.Context, repoPath string, opts PushOptions) error {
-	cmd := NewCommand(ctx, "push")
-	if opts.Force {
-		cmd.AddArguments("-f")
-	}
-	if opts.Mirror {
-		cmd.AddArguments("--mirror")
-	}
-	remoteBranchArgs := []string{opts.Remote}
-	if len(opts.Branch) > 0 {
-		remoteBranchArgs = append(remoteBranchArgs, opts.Branch)
-	}
-	cmd.AddDashesAndList(remoteBranchArgs...)
-
-	if strings.Contains(opts.Remote, "://") && strings.Contains(opts.Remote, "@") {
-		cmd.SetDescription(fmt.Sprintf("push branch %s to %s (force: %t, mirror: %t)", opts.Branch, util.SanitizeCredentialURLs(opts.Remote), opts.Force, opts.Mirror))
-	} else {
-		cmd.SetDescription(fmt.Sprintf("push branch %s to %s (force: %t, mirror: %t)", opts.Branch, opts.Remote, opts.Force, opts.Mirror))
-	}
-	var outbuf, errbuf strings.Builder
-
-	if opts.Timeout == 0 {
-		opts.Timeout = -1
-	}
-
-	err := cmd.Run(&RunOpts{
-		Env:     opts.Env,
-		Timeout: opts.Timeout,
-		Dir:     repoPath,
-		Stdout:  &outbuf,
-		Stderr:  &errbuf,
+func (repo *Repository) Push(ctx context.Context, commitHash string, opt PushOptions) error {
+	branch := strings.TrimSpace(commitHash) + ":" + BranchPrefix + strings.TrimSpace(opt.Branch)
+	return repo.gogit.PushContext(ctx, &gogit.PushOptions{
+		RemoteName: opt.Remote,
+		Force:      opt.Force,
+		RefSpecs: []config.RefSpec{
+			config.RefSpec(branch),
+		},
 	})
-	if err != nil {
-		if strings.Contains(errbuf.String(), "non-fast-forward") {
-			return &ErrPushOutOfDate{
-				StdOut: outbuf.String(),
-				StdErr: errbuf.String(),
-				Err:    err,
-			}
-		} else if strings.Contains(errbuf.String(), "! [remote rejected]") {
-			err := &ErrPushRejected{
-				StdOut: outbuf.String(),
-				StdErr: errbuf.String(),
-				Err:    err,
-			}
-			err.GenerateMessage()
-			return err
-		} else if strings.Contains(errbuf.String(), "matches more than one") {
-			err := &ErrMoreThanOne{
-				StdOut: outbuf.String(),
-				StdErr: errbuf.String(),
-				Err:    err,
-			}
-			return err
-		}
-	}
-
-	if errbuf.Len() > 0 && err != nil {
-		return fmt.Errorf("%w - %s", err, errbuf.String())
-	}
-
-	return err
 }
 
 // GetLatestCommitTime returns time for latest commit in repository (across all branches)

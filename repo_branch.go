@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/storer"
@@ -154,14 +155,19 @@ func (repo *Repository) CreateBranch(branch, oldbranchOrCommit string) error {
 
 // AddRemote adds a new remote to repository.
 func (repo *Repository) AddRemote(name, url string, fetch bool) error {
-	cmd := NewCommand(repo.Ctx, "remote", "add")
-	if fetch {
-		cmd.AddArguments("-f")
+	r, err := repo.gogit.CreateRemote(&config.RemoteConfig{
+		Name: name,
+		URLs: []string{url},
+	})
+	if err != nil {
+		return err
 	}
-	cmd.AddDynamicArguments(name, url)
-
-	_, _, err := cmd.RunStdString(&RunOpts{Dir: repo.Path})
-	return err
+	if fetch {
+		r.Fetch(&git.FetchOptions{
+			RemoteName: name,
+		})
+	}
+	return nil
 }
 
 // RemoveRemote removes a remote from repository.
